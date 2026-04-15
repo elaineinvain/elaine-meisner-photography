@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elaine Meisner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Special+Gothic+Condensed+One&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root { --font: 'Special Gothic Condensed One', sans-serif; --ink: rgb(220,50,35); }
+
+    html {
+      width: 100%; height: 100%;
+    }
+
+    body {
+      width: 100%; height: 100%;
+      /* background.jpg fills entire body — JS adds the url() once confirmed */
+      background-color: #faf9f7;
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: var(--ink);
+      overflow: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 99999;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 28px 40px;
+      pointer-events: none;
+    }
+    nav a {
+      font-family: var(--font);
+      font-size: 32px;
+      letter-spacing: 0.03em;
+      text-transform: lowercase;
+      text-decoration: none;
+      color: var(--ink);
+      pointer-events: all;
+      cursor: pointer;
+      opacity: 1;
+    }
+    nav .home { font-size: 32px; }
+
+    /* ── LOADER ── */
+    #loader {
+      position: fixed; inset: 0;
+      z-index: 999999;
+      background: #000;
+      cursor: default;
+      overflow: hidden;
+    }
+    #loader.clickable { cursor: pointer; }
+    #loader-img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    #loader-title {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font);
+      font-size: clamp(32px, 6vw, 80px);
+      letter-spacing: 0.04em;
+      text-transform: lowercase;
+      /* pure white — mix-blend-mode:difference makes it always visible */
+      color: #fff;
+      mix-blend-mode: difference;
+      pointer-events: none; user-select: none;
+    }
+    #loader-hint {
+      position: absolute;
+      bottom: 40px; left: 0; right: 0;
+      text-align: center;
+      font-family: var(--font);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: lowercase;
+      /* identical treatment to title so colour is always the same */
+      color: #fff;
+      mix-blend-mode: difference;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+      pointer-events: none;
+    }
+    #loader-hint.visible { opacity: 1; }
+    #loader.fade-out { transition: opacity 0.5s ease; opacity: 0; pointer-events: none; }
+
+    /* ── CANVAS ── */
+    #canvas { position: fixed; inset: 0; }
+
+    /* ── PHOTO SYSTEM ──
+       .photo-wrap  → positioned absolutely, carries the rotation (never animated)
+       .photo-inner → child, carries drop-in animation (no rotation = no conflict)
+    ── */
+    .photo-wrap {
+      position: absolute;
+      cursor: grab;
+      user-select: none;
+    }
+    .photo-wrap:active { cursor: grabbing; }
+
+    .photo-inner {
+      width: 100%; height: 100%;
+      border-radius: 1px;
+      overflow: hidden;
+      background: #e8e5df;
+      box-shadow: 3px 3px 2px rgba(0,0,0,.20), 6px 6px 6px rgba(0,0,0,.12);
+      transition: box-shadow 0.2s ease;
+      /* start hidden; JS sets animation-delay then triggers via class */
+      opacity: 0;
+    }
+    .photo-inner.animate {
+      animation: dropIn 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+    @keyframes dropIn {
+      from { opacity: 0; transform: translateY(-22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .photo-inner.lifted {
+      box-shadow: 5px 5px 3px rgba(0,0,0,.22), 10px 10px 8px rgba(0,0,0,.14);
+    }
+    .photo-inner img {
+      display: block; width: 100%; height: 100%;
+      object-fit: cover; pointer-events: none;
+      filter: saturate(0.88) brightness(1.02);
+    }
+
+    /* ── MOBILE ── */
+    #mobile-stack {
+      display: none; position: fixed; inset: 0;
+      align-items: center; justify-content: center;
+    }
+    .swipe-track {
+      width: 100%; overflow-x: scroll;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      display: flex; gap: 20px;
+      padding: 0 calc(50vw - 140px);
+      align-items: center;
+    }
+    .swipe-track::-webkit-scrollbar { display: none; }
+    .swipe-card {
+      flex: 0 0 280px; height: auto;
+      scroll-snap-align: center;
+      border-radius: 2px; overflow: hidden;
+      background: #e8e5df;
+      box-shadow: 3px 3px 2px rgba(0,0,0,.20), 6px 6px 6px rgba(0,0,0,.12);
+    }
+    .swipe-card img { width: 100%; height: auto; display: block; filter: saturate(0.88) brightness(1.02); }
+
+    @media (max-width: 700px) {
+      #canvas { display: none; }
+      #mobile-stack { display: flex; }
+      nav { padding: 22px 24px; }
+      nav a { font-size: 12px; }
+      nav .home { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loader">
+    <img id="loader-img" src="" alt="">
+    <div id="loader-title">elaine meisner</div>
+    <div id="loader-hint">click anywhere to enter</div>
+  </div>
+
+  <nav>
+    <a id="nav-home" class="home">elaine meisner</a>
+    <a href="about.html">about</a>
+  </nav>
+
+  <div id="canvas"></div>
+  <div id="mobile-stack"><div class="swipe-track" id="swipe-track"></div></div>
+
+  <script>
+    /* ── background.jpg ──────────────────────────────────────────────────── */
+    (function () {
+      const img = new Image();
+      img.onload = () => { document.body.style.backgroundImage = "url('images/background.jpg')"; };
+      img.src = 'images/background.jpg';
+    })();
+
+    /* ── Loader ──────────────────────────────────────────────────────────── */
+    (function () {
+      const loader = document.getElementById('loader');
+      const loaderImg = document.getElementById('loader-img');
+      const hint = document.getElementById('loader-hint');
+
+      // Von about-Seite kommend: Loader sofort überspringen, Fotos direkt animieren
+      if (sessionStorage.getItem('skipLoader')) {
+        sessionStorage.removeItem('skipLoader');
+        loader.remove();
+        // startPhotoAnimation noch nicht definiert — warten bis DOM fertig
+        window.addEventListener('photosReady', function () {
+          window.startPhotoAnimation();
+        }, { once: true });
+        return;
+      }
+
+      let canClose = false, timer, slides = [], idx = 0, interval = 1000;
+
+      function tick() {
+        loaderImg.src = slides[idx++ % slides.length];
+        interval = Math.max(333, interval * 0.91);
+        timer = setTimeout(tick, interval);
+      }
+
+      function loadSlides(i) {
+        const t = new Image();
+        t.onload  = () => { slides.push('images/slide' + i + '.jpg'); loadSlides(i + 1); };
+        t.onerror = () => { slides.length ? tick() : loader.remove(); };
+        t.src = 'images/slide' + i + '.jpg';
+      }
+
+      setTimeout(() => {
+        canClose = true;
+        loader.classList.add('clickable');
+        hint.classList.add('visible');
+      }, 3000);
+
+      loader.addEventListener('click', () => {
+        if (!canClose) return;
+        clearTimeout(timer);
+        loader.classList.add('fade-out');
+        setTimeout(() => loader.remove(), 500);
+        window.startPhotoAnimation();
+      });
+
+      loadSlides(1);
+    })();
+
+    /* ── Nav home — nur scrollen, nie neu laden ──────────────────────────── */
+    document.getElementById('nav-home').addEventListener('click', (e) => {
+      e.preventDefault();
+      // Falls wir auf einer anderen Seite sind, normal navigieren
+      // Auf index.html: nur nach oben scrollen, kein Reload
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    /* ── Photos ──────────────────────────────────────────────────────────── */
+    // Bilder werden sofort still geladen, aber erst nach Loader-Klick animiert
+    const SCALES = [0.88, 0.92, 0.96, 1.0, 1.04, 1.08];
+    const canvas = document.getElementById('canvas');
+    let topZ = 200;
+    const pendingWraps = []; // sammelt alle Wrap-Elemente vor dem Start
+    let animationStarted = false;
+
+    function sr(s) { const x = Math.sin(s + 1) * 1e4; return x - Math.floor(x); }
+    function toFront(wrap) { wrap.style.zIndex = Math.min(++topZ, 99990); }
+
+    // Startet die staggered Animation für alle bereits geladenen Bilder
+    window.startPhotoAnimation = function () {
+      if (animationStarted) return;
+      animationStarted = true;
+      pendingWraps.forEach((inner, i) => {
+        inner.style.animationDelay = (i * 120) + 'ms';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => { inner.classList.add('animate'); });
+        });
+      });
+    };
+
+    // Falls Loader schon entfernt wurde (skipLoader), sofort starten
+    window.dispatchEvent(new Event('photosReady'));
+
+    (function load(i) {
+      i++;
+      const src = `images/image${i}.jpg`;
+      const t = new Image();
+      t.onerror = () => {};
+      t.onload  = () => {
+        const n     = i;
+        const scale = SCALES[Math.floor(sr(n * 7 + 4) * SCALES.length)];
+        const aspect = t.naturalHeight / t.naturalWidth;
+        const isLandscape = aspect < 1;
+
+        // Portrait: base 280px wide, Landscape: base 420px wide
+        const baseW = isLandscape ? 420 : 280;
+        const w     = Math.round(baseW * scale);
+        const h     = Math.round(w * aspect);
+        const vw    = window.innerWidth;
+        const vh    = window.innerHeight;
+
+        const wrap = document.createElement('div');
+        wrap.className       = 'photo-wrap';
+        wrap.style.zIndex    = n;
+        wrap.style.left      = (Math.random() * (vw + w * 0.6) - w * 0.3) + 'px';
+        wrap.style.top       = (Math.random() * (vh + h * 0.4) - h * 0.2) + 'px';
+        wrap.style.width     = w + 'px';
+        wrap.style.height    = h + 'px';
+        // Keine Rotation
+
+        const inner = document.createElement('div');
+        inner.className = 'photo-inner';
+        // Kein animationDelay hier — wird erst beim Start gesetzt
+
+        const img = document.createElement('img');
+        img.src = src; img.draggable = false;
+        inner.appendChild(img);
+        wrap.appendChild(inner);
+
+        makeDraggable(wrap, inner);
+        canvas.appendChild(wrap);
+        pendingWraps.push(inner);
+
+        // Falls Loader schon weg: sofort animieren
+        if (animationStarted) {
+          inner.style.animationDelay = '0ms';
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => { inner.classList.add('animate'); });
+          });
+        }
+
+        // Mobile
+        const card = document.createElement('div');
+        card.className = 'swipe-card';
+        const mi = document.createElement('img'); mi.src = src;
+        card.appendChild(mi);
+        document.getElementById('swipe-track').appendChild(card);
+
+        load(i);
+      };
+      t.src = src;
+    })(0);
+
+    function makeDraggable(wrap, inner) {
+      let sx, sy, sl, st, dragging = false;
+
+      function dn(x, y) {
+        dragging = true; sx = x; sy = y;
+        sl = parseInt(wrap.style.left) || 0;
+        st = parseInt(wrap.style.top)  || 0;
+        toFront(wrap);
+        inner.classList.add('lifted');
+        /* freeze animation so dragging is instant */
+        inner.style.animationPlayState = 'paused';
+        inner.style.opacity = '1';
+      }
+      function mv(x, y) {
+        if (!dragging) return;
+        wrap.style.left = (sl + x - sx) + 'px';
+        wrap.style.top  = (st + y - sy) + 'px';
+      }
+      function up() { dragging = false; inner.classList.remove('lifted'); }
+
+      wrap.addEventListener('mousedown', e => { e.preventDefault(); dn(e.clientX, e.clientY); });
+      window.addEventListener('mousemove', e => mv(e.clientX, e.clientY));
+      window.addEventListener('mouseup', up);
+      wrap.addEventListener('touchstart', e => { const t = e.touches[0]; dn(t.clientX, t.clientY); }, { passive: true });
+      window.addEventListener('touchmove', e => { if (!dragging) return; const t = e.touches[0]; mv(t.clientX, t.clientY); }, { passive: true });
+      window.addEventListener('touchend', up);
+    }
+  </script>
+</body>
+</html>
