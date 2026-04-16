@@ -522,12 +522,16 @@
       var col = document.createElement('div');
       col.style.cssText = 'display:flex;flex-direction:column;gap:48px;margin-top:24px;';
 
+      var taglineBlock = document.querySelector('.tagline-block');
+      var portraitBlock = document.querySelector('.portrait-block');
+
+      col.appendChild(taglineBlock);  // tagline first
       col.appendChild(contact);
-      col.appendChild(rightCol); // tagline + photo
       col.appendChild(bio);
       col.appendChild(education);
       col.appendChild(pub);
       col.appendChild(exhib);
+      col.appendChild(portraitBlock); // photo last
 
       wrapper.replaceChild(col, mainRow);
     }());
