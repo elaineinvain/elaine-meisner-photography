@@ -196,7 +196,7 @@
 
     @media (max-width: 700px) {
       #canvas { display: none; }
-      #mobile-stack { display: flex; top: 70px; }
+      #mobile-stack { display: flex; top: 50px; align-items: flex-start; padding-top: 20px; }
       nav { position: static; padding: 20px 12px; }
       nav a { font-size: 20px; }
       nav .home { font-size: 20px; }
@@ -311,6 +311,8 @@
     // Falls Loader schon entfernt wurde (skipLoader), sofort starten
     window.dispatchEvent(new Event('photosReady'));
 
+    const mobileSources = [];
+
     (function load(i) {
       i++;
       const src = `images/image${i}.jpg`;
@@ -359,10 +361,14 @@
           });
         }
 
-        // Mobile stack
-        addStackCard(src, n);
+        // Collect for mobile stack
+        mobileSources.push(src);
 
         load(i);
+      };
+      t.onerror = () => {
+        // Loading done — build mobile stack now
+        if (window.innerWidth <= 700) window.buildMobileStack(mobileSources);
       };
       t.src = src;
     })(0);
@@ -374,32 +380,49 @@
     let   stackReady   = false;
     let   stackHeight  = 0;
 
-    // Hide stack until ready
-    if (stackEl) stackEl.style.visibility = 'hidden';
+    // Hide stack until all images are loaded
+    if (stackEl) {
+      stackEl.style.visibility = 'hidden';
+      stackEl.style.opacity = '0';
+    }
 
-    function addStackCard(src, idx) {
-      const scale = SCALES_M[Math.floor(sr(idx * 7 + 4) * SCALES_M.length)];
-      const card  = document.createElement('div');
-      card.className = 'stack-card';
-      card.style.width      = Math.round(280 * scale) + 'px';
-      card.style.visibility = 'hidden'; // hide until positioned
-
-      const img = document.createElement('img');
-      img.src = src; img.draggable = false;
-      card.appendChild(img);
-
-      stackEl.insertBefore(card, stackEl.firstChild);
-      stackCards.unshift(card);
-
-      // Use first card's height as fixed container height
-      img.addEventListener('load', () => {
-        if (stackHeight === 0 && card.offsetHeight > 0) {
-          stackHeight = card.offsetHeight;
-          stackEl.style.height = stackHeight + 'px';
-        }
-        card.style.visibility = '';
-        renderStack(false);
+    function buildStack(sources) {
+      // Build all cards at once, in reverse so index 0 is on top
+      sources.forEach((src, idx) => {
+        const n     = idx + 1;
+        const scale = SCALES_M[Math.floor(sr(n * 7 + 4) * SCALES_M.length)];
+        const card  = document.createElement('div');
+        card.className = 'stack-card';
+        card.style.width = Math.round(280 * scale) + 'px';
+        const img = document.createElement('img');
+        img.src = src; img.draggable = false;
+        card.appendChild(img);
+        stackEl.appendChild(card);
+        stackCards.push(card);
       });
+
+      // Wait for first image to determine height, then show
+      const firstImg = stackCards[0].querySelector('img');
+      function onFirstLoaded() {
+        stackHeight = stackCards[0].offsetHeight;
+        if (stackHeight === 0) {
+          // offsetHeight not ready yet — try again
+          requestAnimationFrame(onFirstLoaded);
+          return;
+        }
+        stackEl.style.height = stackHeight + 'px';
+        renderStack(false);
+        stackEl.style.visibility = '';
+        stackEl.style.transition = 'opacity 0.4s ease';
+        stackEl.style.opacity = '1';
+        stackReady = true;
+      }
+
+      if (firstImg.complete) {
+        requestAnimationFrame(onFirstLoaded);
+      } else {
+        firstImg.addEventListener('load', () => requestAnimationFrame(onFirstLoaded));
+      }
     }
 
     function renderStack(animate) {
@@ -413,17 +436,13 @@
         card.style.opacity   = i < 6 ? '1' : '0';
         card.style.zIndex    = stackCards.length - i;
       });
-      // Never change container height after first set
-      if (stackHeight === 0 && stackCards[0] && stackCards[0].offsetHeight > 0) {
-        stackHeight = stackCards[0].offsetHeight;
-        stackEl.style.height = stackHeight + 'px';
-      }
-      // Show stack once top card is positioned
-      if (!stackReady && stackCards[0] && stackCards[0].offsetHeight > 0) {
-        stackReady = true;
-        stackEl.style.visibility = '';
-      }
     }
+
+    // Called once all photos are collected — only on mobile
+    window.buildMobileStack = function(sources) {
+      if (window.innerWidth > 700) return;
+      buildStack(sources);
+    };
 
     // Drag-to-swipe on top card
     (function () {
