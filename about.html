@@ -325,10 +325,16 @@
     }
 
     @media (max-width: 700px) {
-      nav { padding: 20px 24px; }
-      nav a, nav .home { font-size: 20px; }
+      #scroll-content { padding: 0 12px 60px; }
 
-      #scroll-content { padding: 0 24px 60px; }
+      /* Override content wrapper padding on mobile */
+      #scroll-content > div[style] {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+
+      nav { padding: 20px 12px; }
+      nav a, nav .home { font-size: 20px; }
 
       /* Single column — right col moves below left col */
       .main-row {
