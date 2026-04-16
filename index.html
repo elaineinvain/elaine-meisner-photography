@@ -295,9 +295,10 @@
     function sr(s) { const x = Math.sin(s + 1) * 1e4; return x - Math.floor(x); }
     function toFront(wrap) { wrap.style.zIndex = Math.min(++topZ, 99990); }
 
-    // Startet die staggered Animation für alle bereits geladenen Bilder
+    // Startet die staggered Animation für alle bereits geladenen Bilder (nur Desktop)
     window.startPhotoAnimation = function () {
       if (animationStarted) return;
+      if (window.innerWidth <= 700) { animationStarted = true; return; } // skip on mobile
       animationStarted = true;
       pendingWraps.forEach((inner, i) => {
         inner.style.animationDelay = (i * 120) + 'ms';
@@ -367,54 +368,60 @@
     })(0);
 
     // ── Mobile card stack ─────────────────────────────────────────────────
-    // All cards are pre-built. Drag to swipe — top card flies off screen,
-    // cycles to bottom. No jumping, always centered.
     const stackEl   = document.getElementById('card-stack');
     const SCALES_M  = [0.88, 0.92, 0.96, 1.0, 1.04, 1.08];
-    let   stackCards = [];
-    let   stackReady = false;
+    let   stackCards   = [];
+    let   stackReady   = false;
+    let   stackHeight  = 0;
+
+    // Hide stack until ready
+    if (stackEl) stackEl.style.visibility = 'hidden';
 
     function addStackCard(src, idx) {
       const scale = SCALES_M[Math.floor(sr(idx * 7 + 4) * SCALES_M.length)];
       const card  = document.createElement('div');
       card.className = 'stack-card';
-      card.style.width = Math.round(280 * scale) + 'px';
+      card.style.width      = Math.round(280 * scale) + 'px';
+      card.style.visibility = 'hidden'; // hide until positioned
 
       const img = document.createElement('img');
       img.src = src; img.draggable = false;
       card.appendChild(img);
 
-      // Insert at bottom of stack (behind existing cards)
       stackEl.insertBefore(card, stackEl.firstChild);
       stackCards.unshift(card);
 
-      // Once first image loads, set container height and mark ready
-      if (stackCards.length === 1) {
-        img.addEventListener('load', () => {
-          stackEl.style.height = card.offsetHeight + 'px';
-          stackReady = true;
-          renderStack(false);
-        });
-      }
-
-      renderStack(false);
+      // Use first card's height as fixed container height
+      img.addEventListener('load', () => {
+        if (stackHeight === 0 && card.offsetHeight > 0) {
+          stackHeight = card.offsetHeight;
+          stackEl.style.height = stackHeight + 'px';
+        }
+        card.style.visibility = '';
+        renderStack(false);
+      });
     }
 
     function renderStack(animate) {
       stackCards.forEach((card, i) => {
-        const scale  = 1 - i * 0.03;
-        const yOff   = i * 7;
-        const vis    = i < 6;
+        const scale = 1 - i * 0.03;
+        const yOff  = i * 7;
         card.style.transition = animate
           ? 'transform 0.35s cubic-bezier(0.22,0.61,0.36,1), opacity 0.2s ease'
           : 'none';
-        card.style.transform  = `translateY(${yOff}px) scale(${scale})`;
-        card.style.opacity    = vis ? '1' : '0';
-        card.style.zIndex     = stackCards.length - i;
+        card.style.transform = `translateY(${yOff}px) scale(${scale})`;
+        card.style.opacity   = i < 6 ? '1' : '0';
+        card.style.zIndex    = stackCards.length - i;
       });
-      if (stackCards[0]) {
-        const h = stackCards[0].offsetHeight;
-        if (h > 0) stackEl.style.height = h + 'px';
+      // Never change container height after first set
+      if (stackHeight === 0 && stackCards[0] && stackCards[0].offsetHeight > 0) {
+        stackHeight = stackCards[0].offsetHeight;
+        stackEl.style.height = stackHeight + 'px';
+      }
+      // Show stack once top card is positioned
+      if (!stackReady && stackCards[0] && stackCards[0].offsetHeight > 0) {
+        stackReady = true;
+        stackEl.style.visibility = '';
       }
     }
 
