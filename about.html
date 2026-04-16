@@ -334,18 +334,13 @@
       }
 
       nav {
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        z-index: 99999;
+        position: static;
         padding: 20px 12px;
-        background: transparent;
-        pointer-events: none;
       }
       nav a, nav .home { font-size: 20px; pointer-events: all; }
-      nav .home { padding-left: 0; }
 
-      /* Add top padding to scroll content so it doesn't hide under fixed nav */
-      #scroll-content { padding-top: 70px; }
+      /* Remove top padding since nav is no longer fixed */
+      #scroll-content { padding-top: 0; }
 
       /* Single column */
       .main-row {
