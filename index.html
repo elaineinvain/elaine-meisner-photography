@@ -160,27 +160,31 @@
       inset: 0;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
     }
 
     #card-stack {
       position: relative;
-      width: 75vw;
-      max-width: 320px;
+      width: 72vw;
+      max-width: 300px;
     }
 
     .stack-card {
       position: absolute;
-      top: 0; left: 0;
+      top: 0;
+      left: 0;
       width: 100%;
       border-radius: 2px;
       overflow: hidden;
       background: #e8e5df;
       box-shadow: 3px 3px 2px rgba(0,0,0,.20), 6px 6px 6px rgba(0,0,0,.12);
-      transform-origin: center bottom;
-      transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.35s ease;
+      will-change: transform;
       user-select: none;
-      touch-action: pan-y;
+      touch-action: none;
+      cursor: grab;
     }
+
+    .stack-card:active { cursor: grabbing; }
 
     .stack-card img {
       display: block;
@@ -192,14 +196,8 @@
 
     @media (max-width: 700px) {
       #canvas { display: none; }
-      #mobile-stack {
-        display: flex;
-        top: 70px;
-      }
-      nav {
-        position: static;
-        padding: 20px 12px;
-      }
+      #mobile-stack { display: flex; top: 70px; }
+      nav { position: static; padding: 20px 12px; }
       nav a { font-size: 20px; }
       nav .home { font-size: 20px; }
     }
@@ -369,72 +367,124 @@
     })(0);
 
     // ── Mobile card stack ─────────────────────────────────────────────────
-    const stackEl = document.getElementById('card-stack');
-    const SCALES_M = [0.88, 0.92, 0.96, 1.0, 1.04, 1.08];
-    let stackCards = [];
+    // All cards are pre-built. Drag to swipe — top card flies off screen,
+    // cycles to bottom. No jumping, always centered.
+    const stackEl   = document.getElementById('card-stack');
+    const SCALES_M  = [0.88, 0.92, 0.96, 1.0, 1.04, 1.08];
+    let   stackCards = [];
+    let   stackReady = false;
 
     function addStackCard(src, idx) {
       const scale = SCALES_M[Math.floor(sr(idx * 7 + 4) * SCALES_M.length)];
-      const card = document.createElement('div');
+      const card  = document.createElement('div');
       card.className = 'stack-card';
-      const img = document.createElement('img');
-      img.src = src;
-      img.draggable = false;
-      card.appendChild(img);
       card.style.width = Math.round(280 * scale) + 'px';
-      card.style.left = '50%';
-      stackEl.appendChild(card);
-      stackCards.push(card);
-      updateStack();
+
+      const img = document.createElement('img');
+      img.src = src; img.draggable = false;
+      card.appendChild(img);
+
+      // Insert at bottom of stack (behind existing cards)
+      stackEl.insertBefore(card, stackEl.firstChild);
+      stackCards.unshift(card);
+
+      // Once first image loads, set container height and mark ready
+      if (stackCards.length === 1) {
+        img.addEventListener('load', () => {
+          stackEl.style.height = card.offsetHeight + 'px';
+          stackReady = true;
+          renderStack(false);
+        });
+      }
+
+      renderStack(false);
     }
 
-    function updateStack() {
-      const total = stackCards.length;
+    function renderStack(animate) {
       stackCards.forEach((card, i) => {
-        card.style.zIndex = total - i;
-        const scale = 1 - i * 0.03;
-        const y = i * 6;
-        card.style.transform = `translateX(-50%) translateY(${y}px) scale(${scale})`;
-        card.style.opacity = i > 5 ? '0' : '1';
-        card.style.transition = i === 0 ? 'none' : 'transform 0.35s cubic-bezier(0.22,0.61,0.36,1), opacity 0.35s ease';
+        const scale  = 1 - i * 0.03;
+        const yOff   = i * 7;
+        const vis    = i < 6;
+        card.style.transition = animate
+          ? 'transform 0.35s cubic-bezier(0.22,0.61,0.36,1), opacity 0.2s ease'
+          : 'none';
+        card.style.transform  = `translateY(${yOff}px) scale(${scale})`;
+        card.style.opacity    = vis ? '1' : '0';
+        card.style.zIndex     = stackCards.length - i;
       });
-      // Set container height to top card
       if (stackCards[0]) {
         const h = stackCards[0].offsetHeight;
         if (h > 0) stackEl.style.height = h + 'px';
       }
     }
 
-    function cycleStack() {
-      if (stackCards.length < 2) return;
-      const top = stackCards.shift();
-      top.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-      top.style.transform = 'translateX(-150%) translateY(0) scale(1) rotate(-8deg)';
-      top.style.opacity = '0';
-      updateStack();
-      setTimeout(() => {
-        stackCards.push(top);
-        top.style.transition = 'none';
-        const last = stackCards.length - 1;
-        top.style.transform = `translateX(-50%) translateY(${last * 6}px) scale(${1 - last * 0.03})`;
-        top.style.opacity = last > 5 ? '0' : '1';
-        top.style.zIndex = 1;
-      }, 320);
-    }
-
-    // Swipe detection
+    // Drag-to-swipe on top card
     (function () {
-      let sx = 0, sy = 0;
-      if (!stackEl) return;
-      stackEl.addEventListener('touchstart', e => {
-        sx = e.touches[0].clientX;
-        sy = e.touches[0].clientY;
-      }, { passive: true });
-      stackEl.addEventListener('touchend', e => {
-        const dx = e.changedTouches[0].clientX - sx;
-        const dy = e.changedTouches[0].clientY - sy;
-        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) cycleStack();
-      }, { passive: true });
+      let dragging = false, startX = 0, startY = 0, currentX = 0;
+
+      function getTop() { return stackCards[0]; }
+
+      function onStart(x, y) {
+        if (!stackReady || stackCards.length < 2) return;
+        dragging = true;
+        startX   = x; startY = y; currentX = 0;
+        const top = getTop();
+        top.style.transition = 'none';
+      }
+
+      function onMove(x, y) {
+        if (!dragging) return;
+        currentX = x - startX;
+        const rot = currentX * 0.06;
+        getTop().style.transform = `translateY(0) scale(1) translateX(${currentX}px) rotate(${rot}deg)`;
+      }
+
+      function onEnd() {
+        if (!dragging) return;
+        dragging = false;
+        const top = getTop();
+        const threshold = window.innerWidth * 0.3;
+
+        if (Math.abs(currentX) > threshold) {
+          // Fly off screen
+          const dir = currentX > 0 ? 1 : -1;
+          top.style.transition = 'transform 0.35s ease, opacity 0.25s ease';
+          top.style.transform  = `translateX(${dir * 110}vw) rotate(${dir * 18}deg)`;
+          top.style.opacity    = '0';
+
+          setTimeout(() => {
+            // Move to bottom
+            stackCards.shift();
+            stackCards.push(top);
+            top.style.transition = 'none';
+            top.style.opacity    = '0';
+            const last = stackCards.length - 1;
+            top.style.transform  = `translateY(${last * 7}px) scale(${1 - last * 0.03})`;
+            top.style.zIndex     = 1;
+            renderStack(false);
+            // Fade back in at bottom
+            setTimeout(() => {
+              renderStack(true);
+            }, 40);
+          }, 360);
+
+        } else {
+          // Snap back
+          top.style.transition = 'transform 0.3s cubic-bezier(0.22,0.61,0.36,1)';
+          top.style.transform  = 'translateY(0) scale(1) translateX(0) rotate(0deg)';
+          setTimeout(() => renderStack(true), 30);
+        }
+      }
+
+      if (stackEl) {
+        stackEl.addEventListener('touchstart', e => {
+          onStart(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+        stackEl.addEventListener('touchmove', e => {
+          onMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+        stackEl.addEventListener('touchend', onEnd, { passive: true });
+      }
     }());
 
     function makeDraggable(wrap, inner) {
