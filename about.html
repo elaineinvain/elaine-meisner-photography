@@ -4,13 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About — Elaine Meisner</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Special+Gothic+Condensed+One&display=swap" rel="stylesheet">
   <style>
+    @font-face {
+      font-family: 'Special Gothic Condensed One';
+      src: url('fonts/SpecialGothicCondensedOne-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Geologica';
+      src: url('fonts/Geologica-VariableFont_CRSV,SHRP,slnt,wght.ttf') format('truetype');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --font: 'Special Gothic Condensed One', sans-serif;
+      --body-font: 'Geologica', sans-serif;
       --ink: rgb(220,50,35);
       --text: #ffffff;
       --bg: #111111;
@@ -55,10 +70,24 @@
     nav .home { font-size: 32px; }
     nav .active { opacity: 1; pointer-events: none; }
 
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    @media (max-height: 700px), (max-width: 700px) {
+      html, body { overflow: auto; }
+    }
+
     /* MAIN CONTENT */
     main {
-      padding: 120px 60px 140px;
+      padding: 100px 60px 60px;
       width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(8px, 1.5vh, 20px);
+      justify-content: flex-start;
     }
 
     /* TOP ROW: tagline right */
@@ -68,6 +97,7 @@
       margin-bottom: 48px;
     }
     .tagline {
+      font-family: var(--font);
       font-size: 22px;
       letter-spacing: 0.02em;
       font-weight: 400;
@@ -79,19 +109,20 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 40px;
-      margin-bottom: 60px;
       align-items: start;
     }
 
     .contact-block h2 {
+      font-family: var(--font);
       font-size: 22px;
-      font-weight: 700;
+      font-weight: 400;
       margin-bottom: 20px;
       color: var(--text);
       letter-spacing: 0.02em;
     }
 
     .contact-block p {
+      font-family: var(--font);
       font-size: 22px;
       line-height: 2.0;
       font-weight: 400;
@@ -106,6 +137,7 @@
     .portrait-block {
       display: flex;
       justify-content: flex-end;
+      margin-top: -20px;
     }
 
     .portrait-block img {
@@ -115,51 +147,83 @@
     }
 
     /* EDUCATION */
-    .education-block {
-      margin-bottom: 60px;
-    }
+
 
     .education-block h2 {
+      font-family: var(--font);
       font-size: 22px;
-      font-weight: 700;
+      font-weight: 400;
       margin-bottom: 12px;
       color: var(--text);
     }
 
     .education-block p {
+      font-family: var(--font);
       font-size: 22px;
       line-height: 1.8;
       font-weight: 400;
     }
 
-    /* PUBLICATIONS + EXHIBITIONS ROW */
+    /* BOTTOM ROW: left col = Education + Publications, right col = Exhibitions */
     .bottom-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 40px;
+      align-items: start;
     }
 
-    .pub-block h2,
-    .exhib-block h2 {
+    .edu-pub-block {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(16px, 3vh, 40px);
+    }
+
+    .education-block { }
+
+    .education-block h2 {
+      font-family: var(--font);
       font-size: 22px;
-      font-weight: 700;
-      margin-bottom: 16px;
+      font-weight: 400;
+      margin-bottom: 12px;
       color: var(--text);
+    }
+
+    .education-block p {
+      font-family: var(--font);
+      font-size: 22px;
+      line-height: 1.8;
+      font-weight: 400;
     }
 
     .exhib-block h2 {
       text-align: right;
     }
 
+    .pub-block h2,
+    .exhib-block h2 {
+      font-family: var(--font);
+      font-size: 22px;
+      font-weight: 400;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .exhib-block {
+      padding-top: 20px;
+    }
+
     .pub-block p,
     .exhib-block p {
+      font-family: var(--font);
       font-size: 22px;
       line-height: 2.0;
       font-weight: 400;
     }
 
+    /* Exhibitions: tighter within each block, clear gap between the two entries */
     .exhib-block p {
       text-align: right;
+      line-height: 1.5;
     }
 
     /* IMPRESSUM BUTTON */
@@ -262,31 +326,36 @@
       </div>
     </div>
 
-    <!-- Education -->
-    <div class="education-block">
-      <h2>Education</h2>
-      <p>2025 Bachelor of Arts in Photography, FH Dortmund</p>
-    </div>
-
-    <!-- Publications + Exhibitions -->
+    <!-- Education + Exhibitions on same row -->
     <div class="bottom-row">
-      <div class="pub-block">
-        <h2>Publications</h2>
-        <p>
-          2025 Self-published book "Afterglow"<br>
-          2024 "Crystal Ice" Penida Magazine<br>
-          2024 "Crystal Ice" Dreamer Magazine<br>
-          2023 "Your free trial has come to an end" Photobook Dummy Award, Shortlist<br>
-          2023 Self-published book "Your free trial has come to an end"<br>
-          2023 Self-published book "because you weren't here"
-        </p>
+      <div class="edu-pub-block">
+        <div class="education-block">
+          <h2>Education</h2>
+          <p>2025 Bachelor of Arts in Photography, FH Dortmund</p>
+        </div>
+        <div class="pub-block">
+          <h2>Publications</h2>
+          <p>
+            2025 Self-published book "Afterglow"<br>
+            2024 "Crystal Ice" Penida Magazine<br>
+            2024 "Crystal Ice" Dreamer Magazine<br>
+            2023 "Your free trial has come to an end" Photobook Dummy Award, Shortlist<br>
+            2023 Self-published book "Your free trial has come to an end"<br>
+            2023 Self-published book "because you weren't here"
+          </p>
+        </div>
       </div>
       <div class="exhib-block">
         <h2>Exhibitions</h2>
         <p>
-          2025 "Your free trial has come to an end." Hans A, Dortmund, <em>To Create Something New,</em> Ouroboros group exhibition<br>
-          <br>
-          2024 "Red, like the lipstick I left on your lips" (Zine) Anna Leonowens Gallery Halifax, <em>Of the Flesh</em> Photography group exhibition
+          2025 "Your free trial has come to an end."<br>
+          Hans A, Dortmund, <em>To Create Something New,</em><br>
+          Ouroboros group exhibition
+        </p>
+        <p style="font-family:var(--font);font-size:22px;line-height:1.5;font-weight:400;text-align:right;margin-top:1em;">
+          2024 "Red, like the lipstick I left on your lips" (Zine)<br>
+          Anna Leonowens Gallery Halifax, <em>Of the Flesh</em><br>
+          Photography group exhibition
         </p>
       </div>
     </div>

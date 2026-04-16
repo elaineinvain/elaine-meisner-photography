@@ -4,12 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Elaine Meisner</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Special+Gothic+Condensed+One&display=swap" rel="stylesheet">
   <style>
+    @font-face {
+      font-family: 'Special Gothic Condensed One';
+      src: url('fonts/SpecialGothicCondensedOne-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Geologica';
+      src: url('fonts/Geologica-VariableFont_CRSV,SHRP,slnt,wght.ttf') format('truetype');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root { --font: 'Special Gothic Condensed One', sans-serif; --ink: rgb(220,50,35); }
+    :root {
+      --font: 'Special Gothic Condensed One', sans-serif;
+      --body-font: 'Geologica', sans-serif;
+      --ink: rgb(220,50,35);
+    }
 
     html {
       width: 100%; height: 100%;
