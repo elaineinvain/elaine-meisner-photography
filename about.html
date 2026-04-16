@@ -88,50 +88,69 @@
       justify-content: flex-start;
     }
 
-    /* TOP ROW: tagline right */
-    .top-row {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 48px;
-    }
     .tagline {
       font-family: var(--font);
-      font-size: 22px;
+      font-size: 24px;
       letter-spacing: 0.02em;
       font-weight: 400;
       color: var(--text);
     }
 
-    /* CONTACT + PORTRAIT ROW */
-    .contact-row {
+    /* MAIN TWO-COLUMN LAYOUT */
+    .main-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 40px;
+      gap: 60px;
       align-items: start;
     }
 
+    /* LEFT COLUMN */
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(24px, 4vh, 56px);
+      margin-top: 48px;
+    }
+
+    /* RIGHT COLUMN */
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-end;
+    }
+
+    .tagline-block {
+      text-align: right;
+    }
+
+    /* PORTRAIT — pushed down to align with contact block */
     .portrait-block {
       display: flex;
       justify-content: flex-end;
-      margin-top: -20px;
+      margin-top: 32px;
     }
 
-    .contact-block {
-      margin-top: -20px;
+    .portrait-block img {
+      width: 560px;
+      max-width: 100%;
+      height: auto;
+      display: block;
     }
 
     .contact-block h2 {
       font-family: var(--font);
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 400;
-      margin-bottom: 20px;
+      margin-bottom: 0;
+      line-height: 2.0;
       color: var(--text);
       letter-spacing: 0.02em;
     }
 
     .contact-block p {
       font-family: var(--font);
-      font-size: 22px;
+      font-size: 24px;
       line-height: 2.0;
       font-weight: 400;
       color: var(--text);
@@ -142,23 +161,32 @@
       text-decoration: underline;
     }
 
-    .portrait-block {
+    .bio-block {
       display: flex;
-      justify-content: flex-end;
+      flex-direction: column;
+      gap: 1.5em;
     }
 
-    .portrait-block img {
-      width: 280px;
-      height: auto;
-      display: block;
+    .bio-block p {
+      font-family: var(--font);
+      font-size: 24px;
+      line-height: 1.7;
+      font-weight: 400;
+      color: var(--text);
+      text-align: left !important;
+    }
+
+    /* RIGHT COLUMN: Education + Publications + Exhibitions */
+    .edu-pub-block {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(24px, 4vh, 56px);
     }
 
     /* EDUCATION */
-
-
     .education-block h2 {
       font-family: var(--font);
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 400;
       margin-bottom: 12px;
       color: var(--text);
@@ -166,30 +194,16 @@
 
     .education-block p {
       font-family: var(--font);
-      font-size: 22px;
+      font-size: 24px;
       line-height: 1.8;
       font-weight: 400;
-    }
-
-    /* BOTTOM ROW: left col = Education + Publications, right col = Exhibitions */
-    .bottom-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      align-items: start;
-    }
-
-    .edu-pub-block {
-      display: flex;
-      flex-direction: column;
-      gap: clamp(16px, 3vh, 40px);
     }
 
     .education-block { }
 
     .education-block h2 {
       font-family: var(--font);
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 400;
       margin-bottom: 12px;
       color: var(--text);
@@ -197,40 +211,56 @@
 
     .education-block p {
       font-family: var(--font);
-      font-size: 22px;
+      font-size: 24px;
       line-height: 1.8;
       font-weight: 400;
     }
 
     .exhib-block h2 {
-      text-align: right;
     }
 
     .pub-block h2,
     .exhib-block h2 {
       font-family: var(--font);
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 400;
       margin-bottom: 16px;
       color: var(--text);
     }
 
     .exhib-block {
-      padding-top: 20px;
+      padding-top: 0;
     }
 
     .pub-block p,
     .exhib-block p {
       font-family: var(--font);
-      font-size: 22px;
+      font-size: 24px;
       line-height: 2.0;
       font-weight: 400;
     }
 
-    /* Exhibitions: tighter within each block, clear gap between the two entries */
     .exhib-block p {
-      text-align: right;
       line-height: 1.5;
+    }
+
+    /* BIO TEXT */
+    .bio-block {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5em;
+      max-width: 600px;
+      margin-left: auto;
+      margin-top: 60px;
+    }
+
+    .bio-block p {
+      font-family: var(--font);
+      font-size: 24px;
+      line-height: 1.7;
+      font-weight: 400;
+      color: var(--text);
+      text-align: right;
     }
 
     /* IMPRESSUM BUTTON */
@@ -293,12 +323,8 @@
       nav { padding: 22px 24px; }
       nav a { font-size: 20px; }
       #scroll-content { padding: 100px 24px 120px; }
-      .contact-row,
       .bottom-row { grid-template-columns: 1fr; }
       .portrait-block { justify-content: flex-start; }
-      .exhib-block h2,
-      .exhib-block p { text-align: left; }
-      .top-row { justify-content: flex-start; }
       #impressum-btn { right: 24px; bottom: 24px; }
     }
   </style>
@@ -314,31 +340,24 @@
 
   <div style="padding: 0 40px 40px;display:flex;flex-direction:column;gap:clamp(8px,1.5vh,20px);">
 
-    <!-- Tagline -->
-    <div class="top-row">
-      <span class="tagline">editorial fashion, portrait, event</span>
-    </div>
+    <!-- Two-column layout: left = all text, right = tagline + photo -->
+    <div class="main-row">
 
-    <!-- Contact + Portrait -->
-    <div class="contact-row">
-      <div class="contact-block">
-        <h2>Contact</h2>
-        <p>
-          <a href="mailto:elainemeisner&#64;online.de" style="text-decoration:none;">elainemeisner&#64;online.de</a><br>
-          +49 176 99113914<br>
-          <a href="https://www.instagram.com/sofieelainee" target="_blank">Instagram</a><br>
-          Based in NRW (Germany), available worldwide
-        </p>
-      </div>
-      <div class="portrait-block">
-        <!-- Portraitbild: images/aboutimage1.jpg -->
-        <img id="portrait-img" src="images/aboutimage1.jpg" alt="Elaine Meisner" />
-      </div>
-    </div>
-
-    <!-- Education + Exhibitions on same row -->
-    <div class="bottom-row">
-      <div class="edu-pub-block">
+      <!-- LEFT: Contact, Bio, Education, Publications, Exhibitions -->
+      <div class="left-col">
+        <div class="contact-block">
+          <h2>Contact</h2>
+          <p>
+            <a href="mailto:elainemeisner&#64;online.de" style="text-decoration:none;">elainemeisner&#64;online.de</a><br>
+            +49 176 99113914<br>
+            <a href="https://www.instagram.com/sofieelainee" target="_blank">Instagram</a><br>
+            Based in NRW (Germany), available worldwide
+          </p>
+        </div>
+        <div class="bio-block">
+          <p>Elaine Meisner is a photographer based in Dortmund/ NRW, Germany, with German-Canadian roots. In 2025, she completed her bachelor's degree in photography at Dortmund University of Applied Sciences and Arts and is currently enrolled as a master's student.</p>
+          <p>In her photographic practice, she works with elements such as grain, blur, fog, and direct flash. Her photography is raw and authentic. By alternating between distance and closeness, her images create a tension. Rather than producing isolated, polished images, she constructs narratives that often embody the atmosphere of the night.</p>
+        </div>
         <div class="education-block">
           <h2>Education</h2>
           <p>2025 Bachelor of Arts in Photography, FH Dortmund</p>
@@ -354,20 +373,31 @@
             2023 Self-published book "because you weren't here"
           </p>
         </div>
+        <div class="exhib-block">
+          <h2>Exhibitions</h2>
+          <p>
+            2025 "Your free trial has come to an end."<br>
+            Hans A, Dortmund, <em>To Create Something New,</em><br>
+            Ouroboros group exhibition
+          </p>
+          <p style="font-family:var(--font);font-size:24px;line-height:1.5;font-weight:400;margin-top:1em;">
+            2024 "Red, like the lipstick I left on your lips" (Zine)<br>
+            Anna Leonowens Gallery Halifax, <em>Of the Flesh</em><br>
+            Photography group exhibition
+          </p>
+        </div>
       </div>
-      <div class="exhib-block">
-        <h2>Exhibitions</h2>
-        <p>
-          2025 "Your free trial has come to an end."<br>
-          Hans A, Dortmund, <em>To Create Something New,</em><br>
-          Ouroboros group exhibition
-        </p>
-        <p style="font-family:var(--font);font-size:22px;line-height:1.5;font-weight:400;text-align:right;margin-top:1em;">
-          2024 "Red, like the lipstick I left on your lips" (Zine)<br>
-          Anna Leonowens Gallery Halifax, <em>Of the Flesh</em><br>
-          Photography group exhibition
-        </p>
+
+      <!-- RIGHT: tagline above photo -->
+      <div class="right-col">
+        <div class="tagline-block">
+          <span class="tagline">editorial fashion, portrait, event</span>
+        </div>
+        <div class="portrait-block">
+          <img id="portrait-img" src="images/aboutimage1.jpg" alt="Elaine Meisner" />
+        </div>
       </div>
+
     </div>
 
   </div><!-- end content wrapper -->
