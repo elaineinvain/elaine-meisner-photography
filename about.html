@@ -336,18 +336,38 @@
       nav { padding: 20px 12px; }
       nav a, nav .home { font-size: 20px; }
 
-      /* Single column — right col moves below left col */
+      /* Single column */
       .main-row {
         grid-template-columns: 1fr;
         gap: 0;
+        display: flex;
+        flex-direction: column;
       }
 
-      /* Right col: tagline + photo appear first on mobile */
+      /* Order: left-col first (Contact at top), then right-col (tagline + photo) */
+      .left-col { order: 1; }
+      .right-col { order: 2; }
+
+      /* Left col */
+      .left-col {
+        margin-top: 24px;
+        gap: 48px;
+      }
+
+      /* Only show Contact from left-col before photo — hide rest temporarily,
+         re-show after right-col using CSS order on children */
+      .left-col .contact-block { order: 1; }
+      .left-col .bio-block     { order: 3; }
+      .left-col .education-block { order: 4; }
+      .left-col .pub-block     { order: 5; }
+      .left-col .exhib-block   { order: 6; }
+
+      /* Right col: tagline + photo between contact and bio */
       .right-col {
-        order: -1;
+        order: 2;
         align-items: flex-start;
-        margin-top: 0;
-        margin-bottom: 24px;
+        margin-top: 48px;
+        margin-bottom: 0;
       }
 
       .tagline-block { text-align: left; }
@@ -362,18 +382,12 @@
         max-width: 100%;
       }
 
-      /* Left col: stack all blocks */
-      .left-col {
-        margin-top: 32px;
-        gap: clamp(24px, 4vh, 40px);
-      }
-
       .left-col .bio-block {
         margin-top: 0;
         margin-bottom: 0;
       }
 
-      /* Impressum bottom right */
+      /* Impressum */
       #impressum-btn {
         margin-top: 32px;
         padding-right: 0;
@@ -489,7 +503,34 @@
       img.src = 'images/background.jpg';
     }());
 
-    // Impressum
+    // Mobile reorder: Contact → Tagline+Photo → Bio → Education → Publications → Exhibitions
+    (function () {
+      if (window.innerWidth > 700) return;
+
+      var leftCol   = document.querySelector('.left-col');
+      var rightCol  = document.querySelector('.right-col');
+      var mainRow   = document.querySelector('.main-row');
+      var wrapper   = mainRow.parentNode;
+
+      var contact   = document.querySelector('.contact-block');
+      var bio       = document.querySelector('.bio-block');
+      var education = document.querySelector('.education-block');
+      var pub       = document.querySelector('.pub-block');
+      var exhib     = document.querySelector('.exhib-block');
+
+      // Build flat single-column container
+      var col = document.createElement('div');
+      col.style.cssText = 'display:flex;flex-direction:column;gap:48px;margin-top:24px;';
+
+      col.appendChild(contact);
+      col.appendChild(rightCol); // tagline + photo
+      col.appendChild(bio);
+      col.appendChild(education);
+      col.appendChild(pub);
+      col.appendChild(exhib);
+
+      wrapper.replaceChild(col, mainRow);
+    }());
     var overlay  = document.getElementById('impressum-overlay');
     var btn      = document.getElementById('impressum-btn');
     var closeBtn = document.getElementById('impressum-close');
