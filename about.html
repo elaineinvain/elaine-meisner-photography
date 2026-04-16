@@ -334,12 +334,13 @@
       }
 
       nav {
-        position: static;
+        position: sticky;
+        top: 0;
+        z-index: 99999;
         padding: 20px 12px;
       }
       nav a, nav .home { font-size: 20px; pointer-events: all; }
 
-      /* Remove top padding since nav is no longer fixed */
       #scroll-content { padding-top: 0; }
 
       /* Single column */
