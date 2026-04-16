@@ -179,8 +179,14 @@
 
     @media (max-width: 700px) {
       #canvas { display: none; }
-      #mobile-stack { display: flex; }
-      nav { padding: 20px 12px; }
+      #mobile-stack {
+        display: flex;
+        top: 70px; /* leave room for nav */
+      }
+      nav {
+        position: static;
+        padding: 20px 12px;
+      }
       nav a { font-size: 20px; }
       nav .home { font-size: 20px; }
     }
