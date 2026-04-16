@@ -325,12 +325,53 @@
     }
 
     @media (max-width: 700px) {
-      nav { padding: 22px 24px; }
-      nav a { font-size: 20px; }
-      #scroll-content { padding: 100px 24px 120px; }
-      .bottom-row { grid-template-columns: 1fr; }
-      .portrait-block { justify-content: flex-start; }
-      #impressum-btn { right: 24px; bottom: 24px; }
+      nav { padding: 20px 24px; }
+      nav a, nav .home { font-size: 20px; }
+
+      #scroll-content { padding: 0 24px 60px; }
+
+      /* Single column — right col moves below left col */
+      .main-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      /* Right col: tagline + photo appear first on mobile */
+      .right-col {
+        order: -1;
+        align-items: flex-start;
+        margin-top: 0;
+        margin-bottom: 24px;
+      }
+
+      .tagline-block { text-align: left; }
+
+      .portrait-block {
+        justify-content: flex-start;
+        margin-top: 12px;
+      }
+
+      .portrait-block img {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      /* Left col: stack all blocks */
+      .left-col {
+        margin-top: 32px;
+        gap: clamp(24px, 4vh, 40px);
+      }
+
+      .left-col .bio-block {
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+
+      /* Impressum bottom right */
+      #impressum-btn {
+        margin-top: 32px;
+        padding-right: 0;
+      }
     }
   </style>
 </head>
