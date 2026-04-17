@@ -417,33 +417,118 @@
     // so we don't wait for sequential loading
     if (window.innerWidth <= 700) {
       (function parallelPreload() {
-        const parallel = [];
-        let checked = 0;
+        const FIRST_BATCH = 20; // show stack with first 20 images quickly
         const MAX = 300;
+        const firstBatch = [];
+        const allImages = [];
+        let firstChecked = 0;
+        let allChecked = 0;
+        let stackBuilt = false;
 
         for (let j = 1; j <= MAX; j++) {
           (function(n) {
             const pt = new Image();
+            const src = `images/image${n}.jpg`;
+
             pt.onload = () => {
-              parallel.push({ n, src: `images/image${n}.jpg` });
-              checked++;
-              if (checked === MAX) {
-                const srcs = parallel.sort((a,b) => a.n - b.n).map(x => x.src);
-                window.buildMobileStack(srcs);
+              allImages.push({ n, src });
+
+              if (n <= FIRST_BATCH) {
+                firstBatch.push({ n, src });
+                firstChecked++;
+                // Build stack as soon as first batch is ready
+                if (firstChecked === FIRST_BATCH && !stackBuilt) {
+                  stackBuilt = true;
+                  const srcs = firstBatch.sort((a,b) => a.n - b.n).map(x => x.src);
+                  window.buildMobileStack(srcs);
+                }
+              }
+
+              allChecked++;
+              // Once everything is loaded, silently append new cards to bottom of stack
+              if (allChecked === MAX) {
+                const remaining = allImages
+                  .sort((a,b) => a.n - b.n)
+                  .filter(x => x.n > FIRST_BATCH)
+                  .map(x => x.src);
+                window.appendToStack && window.appendToStack(remaining);
               }
             };
+
             pt.onerror = () => {
-              checked++;
-              if (checked === MAX) {
-                const srcs = parallel.sort((a,b) => a.n - b.n).map(x => x.src);
+              if (n <= FIRST_BATCH) {
+                firstChecked++;
+                if (firstChecked === FIRST_BATCH && !stackBuilt) {
+                  stackBuilt = true;
+                  const srcs = firstBatch.sort((a,b) => a.n - b.n).map(x => x.src);
+                  window.buildMobileStack(srcs);
+                }
+              }
+              allChecked++;
+              if (allChecked === MAX && !stackBuilt) {
+                stackBuilt = true;
+                const srcs = allImages.sort((a,b) => a.n - b.n).map(x => x.src);
                 window.buildMobileStack(srcs);
               }
             };
-            pt.src = `images/image${n}.jpg`;
+
+            pt.src = src;
           })(j);
         }
       })();
     }
+
+    // Silently append more images to the bottom of the stack after initial build
+    window.appendToStack = function(sources) {
+      if (!ready || !stackEl) return;
+      // Shuffle the new sources
+      for (let i = sources.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [sources[i], sources[j]] = [sources[j], sources[i]];
+      }
+      sources.forEach((src, idx) => {
+        const t = new Image();
+        t.onload = () => {
+          const landscape = t.naturalWidth > t.naturalHeight;
+          const i = cards.length + idx;
+          const rot = parseFloat((sr(i * 13 + 7) < 0.25 ? 0 : (sr(i * 7 + 3) * 8 - 4)).toFixed(1));
+          const scaleArr = [0.90, 0.93, 0.96, 1.0, 1.03, 1.06];
+          const scale = scaleArr[Math.floor(sr(i * 5 + 2) * scaleArr.length)];
+          const baseW = landscape ? 360 : 310;
+          const w = Math.round(baseW * scale);
+
+          const card = document.createElement('div');
+          card.className = 'stack-card';
+          card.dataset.rot = rot;
+          card.dataset.landscape = landscape ? '1' : '0';
+          card.style.width = w + 'px';
+          const yPos = (VISIBLE - 1) * Y_STEP;
+          card.style.transform = `translateY(${yPos}px) rotate(${rot}deg)`;
+          card.dataset.baseY = yPos;
+          card.style.opacity = '0'; // invisible at bottom
+          card.style.zIndex = '1';
+
+          const img = document.createElement('img');
+          img.src = src; img.draggable = false;
+          if (landscape && stackEl.querySelector('[data-landscape="0"]')) {
+            const h = stackEl.querySelector('[data-landscape="0"]').offsetHeight;
+            if (h) {
+              card.style.height = h + 'px';
+              img.style.position = 'absolute';
+              img.style.top = '50%';
+              img.style.left = '0';
+              img.style.width = '100%';
+              img.style.height = 'auto';
+              img.style.transform = 'translateY(-50%)';
+            }
+          }
+          card.appendChild(img);
+          stackEl.appendChild(card);
+          cards.push(card); // add to end of array
+        };
+        t.src = src;
+      });
+    };
 
     // ── Mobile card stack (Tinder-style) ─────────────────────────────────
     const stackEl  = document.getElementById('card-stack');
