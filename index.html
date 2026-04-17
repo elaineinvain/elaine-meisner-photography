@@ -774,7 +774,7 @@
             cards.unshift(undoCard);
             const undoRot = parseFloat(undoCard.dataset.rot || 0);
             const undoY   = parseFloat(undoCard.dataset.baseY || 0);
-            undoCard.style.transition = 'transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94)';
+            undoCard.style.transition = 'transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94)';
             undoCard.style.transform  = `translate3d(0,${undoY}px,0) rotate(${undoRot}deg)`;
             undoCard.style.zIndex     = cards.length;
             positionAll(false);
