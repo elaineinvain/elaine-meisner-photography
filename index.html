@@ -157,11 +157,11 @@
     #mobile-stack {
       display: none;
       position: fixed;
-      top: 55px;
+      top: 52px;
       left: 0; right: 0; bottom: 0;
       align-items: flex-start;
       justify-content: center;
-      padding-top: 16px;
+      padding-top: 12px;
       overflow: hidden;
       pointer-events: none;
     }
@@ -171,18 +171,23 @@
       width: 88vw;
       max-width: 380px;
       pointer-events: all;
+      flex-shrink: 0;
     }
 
     #stack-wrapper {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 24px;
       pointer-events: all;
+      width: 100%;
     }
 
-    /* Swipe hint — below the stack */
+    /* Swipe hint — fixed at bottom of screen */
     #swipe-hint {
+      position: fixed;
+      bottom: 28px;
+      left: 0; right: 0;
+      text-align: center;
       font-family: var(--font);
       font-size: 16px;
       letter-spacing: 0.1em;
@@ -191,7 +196,7 @@
       opacity: 0;
       transition: opacity 0.5s ease;
       pointer-events: none;
-      white-space: nowrap;
+      z-index: 99998;
     }
 
     #swipe-hint.visible { opacity: 1; }
@@ -245,9 +250,9 @@
   <div id="mobile-stack">
     <div id="stack-wrapper">
       <div id="card-stack"></div>
-      <div id="swipe-hint">← swipe →</div>
     </div>
   </div>
+  <div id="swipe-hint">← swipe →</div>
 
   <script>
     /* ── background.jpg ──────────────────────────────────────────────────── */
@@ -284,7 +289,12 @@
 
       function loadSlides(i) {
         const t = new Image();
-        t.onload  = () => { slides.push('images/slide' + i + '.jpg'); loadSlides(i + 1); };
+        const isMobile = window.innerWidth <= 700;
+        t.onload  = () => {
+          // Skip slide2 on mobile
+          if (!(isMobile && i === 2)) slides.push('images/slide' + i + '.jpg');
+          loadSlides(i + 1);
+        };
         t.onerror = () => { slides.length ? tick() : loader.remove(); };
         t.src = 'images/slide' + i + '.jpg';
       }
@@ -518,7 +528,8 @@
           }
         });
 
-        stackEl.style.height = (h + Y_STEP * VISIBLE) + 'px';
+        stackEl.style.height = h + 'px';
+        stackEl.style.overflow = 'visible'; // let depth cards show below
         positionAll(false);
         stackEl.style.transition = 'opacity 0.4s ease';
         stackEl.style.opacity = '1';
