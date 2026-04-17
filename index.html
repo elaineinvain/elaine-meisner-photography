@@ -413,6 +413,33 @@
       t.src = src;
     })(0);
 
+    // On mobile: also start parallel preload of all images right away
+    // so we don't wait for sequential loading
+    if (window.innerWidth <= 700) {
+      (function parallelPreload() {
+        let found = 0, checked = 0, total = 0;
+        const parallel = [];
+        // Try up to 200 images in parallel
+        for (let j = 1; j <= 200; j++) {
+          (function(n) {
+            const pt = new Image();
+            pt.onload = () => {
+              parallel.push({ n, src: `images/image${n}.jpg` });
+              found++;
+              checked++;
+              // Build as soon as we have 12, then rebuild with all when done
+              if (found === 12 || checked === 200) {
+                const srcs = parallel.sort((a,b) => a.n - b.n).map(x => x.src);
+                window.buildMobileStack(srcs);
+              }
+            };
+            pt.onerror = () => { checked++; };
+            pt.src = `images/image${n}.jpg`;
+          })(j);
+        }
+      })();
+    }
+
     // ── Mobile card stack (Tinder-style) ─────────────────────────────────
     const stackEl  = document.getElementById('card-stack');
     let   cards    = [];   // [0] = top card
