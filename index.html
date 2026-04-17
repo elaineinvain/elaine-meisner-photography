@@ -157,10 +157,12 @@
     #mobile-stack {
       display: none;
       position: fixed;
-      inset: 0;
+      top: 60px; /* leave room for nav */
+      left: 0; right: 0; bottom: 0;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      pointer-events: none; /* let nav clicks through */
     }
 
     #card-stack {
@@ -168,7 +170,30 @@
       width: 88vw;
       max-width: 380px;
       margin-bottom: -40px;
+      pointer-events: all; /* re-enable for cards */
     }
+
+    /* Swipe hint */
+    #swipe-hint {
+      position: absolute;
+      top: -44px;
+      left: 0; right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-family: var(--font);
+      font-size: 16px;
+      letter-spacing: 0.1em;
+      text-transform: lowercase;
+      color: var(--ink);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+
+    #swipe-hint.visible { opacity: 1; }
+    #swipe-hint.hidden  { opacity: 0; }
 
     .stack-card {
       position: absolute;
@@ -215,7 +240,11 @@
   </nav>
 
   <div id="canvas"></div>
-  <div id="mobile-stack"><div id="card-stack"></div></div>
+  <div id="mobile-stack">
+    <div id="card-stack">
+      <div id="swipe-hint">← swipe →</div>
+    </div>
+  </div>
 
   <script>
     /* ── background.jpg ──────────────────────────────────────────────────── */
@@ -492,6 +521,12 @@
         stackEl.style.opacity = '1';
         ready = true;
         attachDrag();
+
+        // Show swipe hint if first visit
+        const hint = document.getElementById('swipe-hint');
+        if (hint && !sessionStorage.getItem('swipedOnce')) {
+          setTimeout(() => hint.classList.add('visible'), 600);
+        }
       }
       topImg.complete ? requestAnimationFrame(init)
                       : topImg.addEventListener('load', () => requestAnimationFrame(init));
@@ -530,6 +565,12 @@
         undoMode = false;
         undoCard = null;
         cards[0].style.transition = 'none';
+        // Hide swipe hint on first interaction
+        const hint = document.getElementById('swipe-hint');
+        if (hint) {
+          hint.classList.remove('visible');
+          sessionStorage.setItem('swipedOnce', '1');
+        }
       }, { passive: true });
 
       stackEl.addEventListener('touchmove', e => {
