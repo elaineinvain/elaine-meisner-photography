@@ -527,22 +527,51 @@
 
     function attachDrag() {
       let active = false, startX = 0, moveX = 0;
-      const history = []; // cards removed from top, for undo
+      let undoMode = false;  // true when swiping right (undo)
+      let undoCard = null;   // the card being dragged back in
+      const history = [];    // stack of removed cards
 
       stackEl.addEventListener('touchstart', e => {
         if (!ready || cards.length < 2) return;
         active = true;
         startX = e.touches[0].clientX;
         moveX  = 0;
+        undoMode = false;
+        undoCard = null;
         cards[0].style.transition = 'none';
       }, { passive: true });
 
       stackEl.addEventListener('touchmove', e => {
         if (!active) return;
         moveX = e.touches[0].clientX - startX;
-        const baseRot = parseFloat(cards[0].dataset.rot || 0);
-        const rot = baseRot + moveX * 0.05;
-        cards[0].style.transform = `translateX(${moveX}px) rotate(${rot}deg)`;
+
+        if (moveX > 0 && history.length > 0) {
+          // RIGHT swipe — undo mode
+          if (!undoMode) {
+            undoMode = true;
+            undoCard = history[history.length - 1];
+            // Reset top card to its stacked position — it doesn't move
+            cards[0].style.transition = 'none';
+            const rot0 = parseFloat(cards[0].dataset.rot || 0);
+            cards[0].style.transform = `translateY(0px) scale(1) rotate(${rot0}deg)`;
+            // Start undoCard off-screen left
+            undoCard.style.transition = 'none';
+            undoCard.style.opacity    = '1';
+            undoCard.style.zIndex     = cards.length + 1;
+            const undoRot = parseFloat(undoCard.dataset.rot || 0);
+            undoCard.style.transform  = `translateX(-115vw) rotate(${undoRot - 22}deg)`;
+          }
+          // Drag undo card in from left
+          const undoRot = parseFloat(undoCard.dataset.rot || 0);
+          const progress = Math.min(moveX / (window.innerWidth * 0.4), 1);
+          const x = -115 * (1 - progress); // vw units via string
+          undoCard.style.transform = `translateX(${-115 + progress * 115}vw) rotate(${undoRot - 22 + 22 * progress}deg)`;
+        } else if (!undoMode) {
+          // LEFT swipe — normal, move top card
+          const baseRot = parseFloat(cards[0].dataset.rot || 0);
+          const rot = baseRot + moveX * 0.05;
+          cards[0].style.transform = `translateX(${moveX}px) rotate(${rot}deg)`;
+        }
       }, { passive: true });
 
       stackEl.addEventListener('touchend', () => {
@@ -550,61 +579,55 @@
         active = false;
         const threshold = window.innerWidth * 0.28;
 
-        if (Math.abs(moveX) > threshold) {
-          const dir = moveX > 0 ? 1 : -1; // +1 = right, -1 = left
-
-          if (dir === -1) {
-            // LEFT swipe — remove top card, send to bottom
-            const top = cards[0];
-            const baseRot = parseFloat(top.dataset.rot || 0);
-            top.style.transition = 'transform 0.32s ease-out, opacity 0.28s ease';
-            top.style.transform  = `translateX(-115vw) rotate(${baseRot - 22}deg)`;
-            top.style.opacity    = '0';
-            cards.shift();
-            cards.push(top);
-            history.push(top);
-            positionAll(true);
-            setTimeout(() => {
-              top.style.transition = 'none';
-              top.style.opacity    = '0';
-              const last = cards.length - 1;
-              const rot  = parseFloat(top.dataset.rot || 0);
-              top.style.transform = `translateY(${(VISIBLE-1)*Y_STEP}px) scale(${1-(VISIBLE-1)*S_STEP}) rotate(${rot}deg)`;
-              top.style.zIndex    = cards.length - last;
-              requestAnimationFrame(() => {
-                top.style.transition = 'opacity 0.3s ease';
-                top.style.opacity    = cards.indexOf(top) < VISIBLE ? '1' : '0';
-              });
-            }, 340);
-
-          } else {
-            // RIGHT swipe — bring back last removed card to top
-            if (history.length === 0) {
-              // Nothing to bring back — snap
-              cards[0].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
-              positionAll(true);
-              return;
-            }
-            const prev = history.pop();
-            // Remove from bottom of cards array
-            const idx = cards.indexOf(prev);
+        if (undoMode && undoCard) {
+          if (moveX > threshold) {
+            // Complete undo — bring card back to top
+            history.pop();
+            const idx = cards.indexOf(undoCard);
             if (idx !== -1) cards.splice(idx, 1);
-            // Place at top
-            cards.unshift(prev);
-            // Animate in from right
-            prev.style.transition = 'none';
-            prev.style.opacity    = '1';
-            const prevRot = parseFloat(prev.dataset.rot || 0);
-            prev.style.transform  = `translateX(115vw) rotate(${prevRot + 22}deg)`;
-            prev.style.zIndex     = cards.length;
-            // Also snap current top card back
-            cards[1].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
-            requestAnimationFrame(() => {
-              prev.style.transition = 'transform 0.32s ease-out';
+            cards.unshift(undoCard);
+            undoCard.style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+            const undoRot = parseFloat(undoCard.dataset.rot || 0);
+            undoCard.style.transform = `translateY(0px) scale(1) rotate(${undoRot}deg)`;
+            undoCard.style.zIndex = cards.length;
+            positionAll(true);
+          } else {
+            // Snap undo card back off-screen
+            const undoRot = parseFloat(undoCard.dataset.rot || 0);
+            undoCard.style.transition = 'transform 0.28s ease-in, opacity 0.2s ease';
+            undoCard.style.transform  = `translateX(-115vw) rotate(${undoRot - 22}deg)`;
+            undoCard.style.opacity    = '0';
+            setTimeout(() => {
+              undoCard.style.opacity = cards.indexOf(undoCard) < VISIBLE ? '1' : '0';
               positionAll(false);
-              prev.style.transform = `translateY(0px) scale(1) rotate(${prevRot}deg)`;
-            });
+            }, 290);
+            // Snap top card back too
+            cards[0].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+            positionAll(true);
           }
+
+        } else if (!undoMode && Math.abs(moveX) > threshold && moveX < 0) {
+          // LEFT swipe — remove top card
+          const top = cards[0];
+          const baseRot = parseFloat(top.dataset.rot || 0);
+          top.style.transition = 'transform 0.32s ease-out, opacity 0.28s ease';
+          top.style.transform  = `translateX(-115vw) rotate(${baseRot - 22}deg)`;
+          top.style.opacity    = '0';
+          cards.shift();
+          cards.push(top);
+          history.push(top);
+          positionAll(true);
+          setTimeout(() => {
+            top.style.transition = 'none';
+            top.style.opacity    = '0';
+            const rot = parseFloat(top.dataset.rot || 0);
+            top.style.transform = `translateY(${(VISIBLE-1)*Y_STEP}px) scale(${1-(VISIBLE-1)*S_STEP}) rotate(${rot}deg)`;
+            top.style.zIndex    = cards.length - (cards.length - 1);
+            requestAnimationFrame(() => {
+              top.style.transition = 'opacity 0.3s ease';
+              top.style.opacity    = cards.indexOf(top) < VISIBLE ? '1' : '0';
+            });
+          }, 340);
 
         } else {
           // Snap back
