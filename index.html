@@ -180,10 +180,6 @@
       box-shadow: 3px 3px 2px rgba(0,0,0,.22), 6px 6px 8px rgba(0,0,0,.14);
       user-select: none;
       touch-action: none;
-      /* center content vertically for landscape images */
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
     .stack-card img {
@@ -465,10 +461,23 @@
         const h = portraitCard.offsetHeight;
         if (!h) { requestAnimationFrame(init); return; }
 
-        // Set all landscape cards to same height as portrait so centering works
+        // Set landscape cards to same height as portrait for vertical centering
+        // but keep overflow visible and remove background bars
         cards.forEach(card => {
           if (card.dataset.landscape === '1') {
             card.style.height = h + 'px';
+            card.style.background = 'none';
+            card.style.overflow = 'hidden';
+            // Center the image vertically
+            const img = card.querySelector('img');
+            if (img) {
+              img.style.position = 'absolute';
+              img.style.top = '50%';
+              img.style.left = '0';
+              img.style.width = '100%';
+              img.style.height = 'auto';
+              img.style.transform = 'translateY(-50%)';
+            }
           }
         });
 
