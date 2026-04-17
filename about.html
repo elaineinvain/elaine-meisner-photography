@@ -269,13 +269,61 @@
     }
 
     /* IMPRESSUM BUTTON */
-    #impressum-btn {
-      display: block;
+    #footer-btns {
+      display: flex;
+      gap: 24px;
       margin-top: 20px;
       margin-left: auto;
       padding-right: 40px;
+      justify-content: flex-end;
+    }
+
+    #impressum-btn,
+    #datenschutz-btn {
       font-family: var(--font);
       font-size: 20px;
+      letter-spacing: 0.03em;
+      color: var(--ink);
+      background: none;
+      border: none;
+      cursor: pointer;
+      opacity: 1;
+      padding: 0;
+    }
+
+    #datenschutz-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      z-index: 999998;
+      background: rgba(17,17,17,0.85);
+      backdrop-filter: blur(6px);
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+    }
+    #datenschutz-overlay.open { display: flex; }
+    #datenschutz-box {
+      max-width: 560px;
+      width: 90%;
+      font-family: var(--font);
+      font-size: 18px;
+      letter-spacing: 0.03em;
+      line-height: 1.9;
+      color: var(--text);
+      padding: 20px 0;
+    }
+    #datenschutz-box h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    #datenschutz-box strong {
+      font-weight: 700;
+    }
+    #datenschutz-close {
+      display: inline-block;
+      margin-top: 28px;
+      font-family: var(--font);
+      font-size: 18px;
       letter-spacing: 0.03em;
       text-transform: lowercase;
       color: var(--ink);
@@ -284,8 +332,6 @@
       cursor: pointer;
       opacity: 1;
     }
-
-    /* IMPRESSUM OVERLAY */
     #impressum-overlay {
       display: none;
       position: fixed; inset: 0;
@@ -390,10 +436,10 @@
         margin-bottom: 0;
       }
 
-      /* Impressum */
-      #impressum-btn {
-        margin-top: 32px;
+      /* Impressum + Datenschutz */
+      #footer-btns {
         padding-right: 0;
+        justify-content: flex-start;
       }
     }
   </style>
@@ -471,13 +517,16 @@
 
   </div><!-- end content wrapper -->
 
-  <button id="impressum-btn">impressum</button>
+  <div id="footer-btns">
+    <button id="impressum-btn">Impressum</button>
+    <button id="datenschutz-btn">Datenschutz</button>
+  </div>
 
   </div><!-- end scroll-content -->
 
   <div id="impressum-overlay">
     <div id="impressum-box">
-      <h2>impressum</h2>
+      <h2>Impressum</h2>
       <p>
         Elaine Meisner<br>
         Saarlandstrasse 45<br>
@@ -487,6 +536,38 @@
         contact: <a href="mailto:elainemeisner&#64;online.de" style="color:inherit; text-decoration:none;">elainemeisner&#64;online.de</a>
       </p>
       <button id="impressum-close">close</button>
+    </div>
+  </div>
+
+  <div id="datenschutz-overlay">
+    <div id="datenschutz-box">
+      <h2>Datenschutz</h2>
+      <p>
+        <strong>Verantwortliche Person</strong><br>
+        Elaine Meisner<br>
+        Saarlandstrasse 45, 44139 Dortmund<br>
+        elainemeisner&#64;online.de<br>
+        <br>
+        <strong>Hosting</strong><br>
+        Diese Website wird gehostet von Vercel Inc., 340 Pine Street, San Francisco, CA 94104, USA.
+        Beim Aufruf der Website werden durch den Hosting-Anbieter Server-Logs mit IP-Adressen
+        für bis zu 30 Tage gespeichert. Weitere Informationen: vercel.com/legal/privacy-policy<br>
+        <br>
+        <strong>Cookies und lokaler Speicher</strong><br>
+        Diese Website verwendet keine Cookies. Es wird ausschliesslich der sessionStorage des Browsers
+        für technisch notwendige Funktionen genutzt. Die Daten werden automatisch beim Schliessen
+        des Browser-Tabs gelöscht und nicht an Dritte übermittelt.<br>
+        <br>
+        <strong>Externe Links</strong><br>
+        Diese Website enthält einen Link zu Instagram (Meta Platforms Ireland Ltd.). Beim Anklicken
+        verlassen Sie diese Website. Für die Inhalte und Datenschutzpraktiken von Instagram ist
+        Meta verantwortlich.<br>
+        <br>
+        <strong>Ihre Rechte</strong><br>
+        Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung
+        Ihrer personenbezogenen Daten. Wenden Sie sich dazu an die oben genannte Adresse.
+      </p>
+      <button id="datenschutz-close">close</button>
     </div>
   </div>
 
@@ -547,6 +628,18 @@
     closeBtn.addEventListener('click', closeOverlay);
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay) closeOverlay();
+    });
+
+    // Datenschutz
+    var dsOverlay = document.getElementById('datenschutz-overlay');
+    var dsBtn     = document.getElementById('datenschutz-btn');
+    var dsClose   = document.getElementById('datenschutz-close');
+
+    dsBtn.addEventListener('click', function () { dsOverlay.classList.add('open'); });
+    function closeDsOverlay() { dsOverlay.classList.remove('open'); }
+    dsClose.addEventListener('click', closeDsOverlay);
+    dsOverlay.addEventListener('click', function (e) {
+      if (e.target === dsOverlay) closeDsOverlay();
     });
   </script>
 </body>
