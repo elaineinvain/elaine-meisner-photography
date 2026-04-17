@@ -165,9 +165,8 @@
 
     #card-stack {
       position: relative;
-      width: 78vw;
-      max-width: 320px;
-      /* extra bottom padding to show thick stack */
+      width: 88vw;
+      max-width: 380px;
       margin-bottom: -40px;
     }
 
@@ -181,6 +180,10 @@
       box-shadow: 3px 3px 2px rgba(0,0,0,.22), 6px 6px 8px rgba(0,0,0,.14);
       user-select: none;
       touch-action: none;
+      /* center content vertically for landscape images */
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .stack-card img {
@@ -444,15 +447,9 @@
         card.dataset.rot = rotations[i];
         card.dataset.landscape = landscape ? '1' : '0';
 
-        const baseW = landscape ? 300 : 260;
-        card.style.width = Math.round(baseW * scales[i]) + 'px';
-
-        // Landscape cards: use flex to center vertically within portrait-like container
-        if (landscape) {
-          card.style.display = 'flex';
-          card.style.alignItems = 'center';
-          card.style.justifyContent = 'center';
-        }
+        const baseW = landscape ? 360 : 310;
+        const w = Math.round(baseW * scales[i]);
+        card.style.width = w + 'px';
 
         const img = document.createElement('img');
         img.src = src; img.draggable = false;
@@ -464,10 +461,17 @@
       // Wait for top card to render, lock height, show
       const topImg = cards[0].querySelector('img');
       function init() {
-        // Use a portrait card for height reference
         const portraitCard = cards.find(c => c.dataset.landscape === '0') || cards[0];
         const h = portraitCard.offsetHeight;
         if (!h) { requestAnimationFrame(init); return; }
+
+        // Set all landscape cards to same height as portrait so centering works
+        cards.forEach(card => {
+          if (card.dataset.landscape === '1') {
+            card.style.height = h + 'px';
+          }
+        });
+
         stackEl.style.height = (h + Y_STEP * VISIBLE) + 'px';
         positionAll(false);
         stackEl.style.transition = 'opacity 0.4s ease';
@@ -516,15 +520,7 @@
         const baseRot = parseFloat(cards[0].dataset.rot || 0);
         const rot = baseRot + moveX * 0.05;
         cards[0].style.transform = `translateX(${moveX}px) rotate(${rot}deg)`;
-        // Peek next card
-        if (cards[1]) {
-          const prog = Math.min(Math.abs(moveX) / (window.innerWidth * 0.3), 1);
-          const nextRot = parseFloat(cards[1].dataset.rot || 0);
-          cards[1].style.transition = 'none';
-          const s = (1 - S_STEP) + S_STEP * prog;
-          const y = Y_STEP - Y_STEP * prog;
-          cards[1].style.transform = `translateY(${y}px) scale(${s}) rotate(${nextRot}deg)`;
-        }
+        // No peek: cards behind stay in place
       }, { passive: true });
 
       stackEl.addEventListener('touchend', () => {
