@@ -157,26 +157,26 @@
     #mobile-stack {
       display: none;
       position: fixed;
-      top: 60px; /* leave room for nav */
+      top: 55px;
       left: 0; right: 0; bottom: 0;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
+      padding-top: 16px;
       overflow: hidden;
-      pointer-events: none; /* let nav clicks through */
+      pointer-events: none;
     }
 
     #card-stack {
       position: relative;
       width: 88vw;
       max-width: 380px;
-      margin-bottom: -40px;
-      pointer-events: all; /* re-enable for cards */
+      pointer-events: all;
     }
 
-    /* Swipe hint */
+    /* Swipe hint — below the stack */
     #swipe-hint {
       position: absolute;
-      top: -44px;
+      bottom: -36px;
       left: 0; right: 0;
       display: flex;
       align-items: center;
@@ -535,19 +535,26 @@
     function positionAll(animate) {
       cards.forEach((card, i) => {
         const visible = i < VISIBLE;
-        const rot = parseFloat(card.dataset.rot || 0);
-        card.style.transition = animate
-          ? 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)'
-          : 'none';
-        card.style.zIndex    = cards.length - i;
-        card.style.opacity   = visible ? '1' : '0';
-        if (visible) {
-          const scale = 1 - i * S_STEP;
-          const y     = i * Y_STEP;
-          card.style.transform = `translateY(${y}px) scale(${scale}) rotate(${rot}deg)`;
+        const rot   = parseFloat(card.dataset.rot || 0);
+        const scale = visible ? (1 - i * S_STEP) : (1 - (VISIBLE - 1) * S_STEP);
+        const y     = visible ? i * Y_STEP : (VISIBLE - 1) * Y_STEP;
+
+        // Scale and rotation: never animated (instant)
+        // Only Y position animates
+        if (animate) {
+          card.style.transition = 'none';
+          card.style.transform  = `translateY(${y}px) scale(${scale}) rotate(${rot}deg)`;
+          // Then let Y animate in next frame
+          requestAnimationFrame(() => {
+            card.style.transition = 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)';
+          });
         } else {
-          card.style.transform = `translateY(${(VISIBLE-1)*Y_STEP}px) scale(${1-(VISIBLE-1)*S_STEP}) rotate(${rot}deg)`;
+          card.style.transition = 'none';
+          card.style.transform  = `translateY(${y}px) scale(${scale}) rotate(${rot}deg)`;
         }
+
+        card.style.zIndex  = cards.length - i;
+        card.style.opacity = visible ? '1' : '0';
       });
     }
 
