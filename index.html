@@ -210,7 +210,10 @@
       overflow: hidden;
       background: transparent;
       user-select: none;
-      touch-action: none;
+      touch-action: pan-y;
+      will-change: transform;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
 
     .stack-card img {
@@ -685,7 +688,7 @@
       // Only update z-index and opacity — never move cards
       cards.forEach((card, i) => {
         const visible = i < VISIBLE;
-        card.style.transition = 'opacity 0.2s ease';
+        card.style.transition = 'opacity 0.3s ease';
         card.style.zIndex     = cards.length - i;
         card.style.opacity    = visible ? '1' : '0';
       });
@@ -772,7 +775,7 @@
           } else {
             // Snap undo card back off-screen
             const undoRot = parseFloat(undoCard.dataset.rot || 0);
-            undoCard.style.transition = 'transform 0.28s ease-in, opacity 0.2s ease';
+            undoCard.style.transition = 'transform 0.4s cubic-bezier(0.55,0,1,0.45), opacity 0.3s ease';
             undoCard.style.transform  = `translateX(-115vw) rotate(${undoRot - 22}deg)`;
             undoCard.style.opacity    = '0';
             setTimeout(() => {
@@ -780,7 +783,7 @@
               positionAll(false);
             }, 290);
             // Snap top card back too
-            cards[0].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+            cards[0].style.transition = 'transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94)';
             positionAll(false);
           }
 
@@ -790,21 +793,21 @@
             // Truly at end — snap back
             const snapRot = parseFloat(cards[0].dataset.rot || 0);
             const snapY   = parseFloat(cards[0].dataset.baseY || 0);
-            cards[0].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+            cards[0].style.transition = 'transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94)';
             cards[0].style.transform  = `translateY(${snapY}px) rotate(${snapRot}deg)`;
             return;
           } else if (cards.length <= 1) {
             // Last card — allow right-swipe (undo) but not left
             const snapRot = parseFloat(cards[0].dataset.rot || 0);
             const snapY   = parseFloat(cards[0].dataset.baseY || 0);
-            cards[0].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+            cards[0].style.transition = 'transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94)';
             cards[0].style.transform  = `translateY(${snapY}px) rotate(${snapRot}deg)`;
             return;
           }
           const top = cards[0];
           const baseRot = parseFloat(top.dataset.rot || 0);
           const baseY   = parseFloat(top.dataset.baseY || 0);
-          top.style.transition = 'transform 0.32s ease-out, opacity 0.28s ease';
+          top.style.transition = 'transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.35s ease';
           top.style.transform  = `translateX(-115vw) translateY(${baseY}px) rotate(${baseRot - 22}deg)`;
           top.style.opacity    = '0';
           cards.shift();
@@ -816,7 +819,7 @@
           // Snap back to base position
           const snapRot = parseFloat(cards[0].dataset.rot || 0);
           const snapY   = parseFloat(cards[0].dataset.baseY || 0);
-          cards[0].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+          cards[0].style.transition = 'transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94)';
           cards[0].style.transform  = `translateY(${snapY}px) rotate(${snapRot}deg)`;
           positionAll(false);
         }
