@@ -176,8 +176,7 @@
       width: 100%;
       border-radius: 2px;
       overflow: hidden;
-      background: #e8e5df;
-      box-shadow: 3px 3px 2px rgba(0,0,0,.22), 6px 6px 8px rgba(0,0,0,.14);
+      background: transparent;
       user-select: none;
       touch-action: none;
     }
@@ -189,6 +188,8 @@
       pointer-events: none;
       filter: saturate(0.88) brightness(1.02);
       -webkit-user-drag: none;
+      box-shadow: 3px 3px 2px rgba(0,0,0,.22), 6px 6px 8px rgba(0,0,0,.14);
+      border-radius: 2px;
     }
 
     @media (max-width: 700px) {
@@ -361,11 +362,20 @@
         // Collect for mobile stack
         mobileSources.push(src);
 
+        // On mobile: build stack immediately after first few images load
+        // for faster display — don't wait for all 94
+        if (window.innerWidth <= 700 && mobileSources.length === 8) {
+          // Pre-build with first 8, rest added lazily
+          window.buildMobileStack(mobileSources.slice());
+        }
+
         load(i);
       };
       t.onerror = () => {
-        // Loading done — build mobile stack now
-        if (window.innerWidth <= 700) window.buildMobileStack(mobileSources);
+        // All images found — if not yet built on mobile, build now
+        if (window.innerWidth <= 700 && mobileSources.length < 8) {
+          window.buildMobileStack(mobileSources);
+        }
       };
       t.src = src;
     })(0);
@@ -382,20 +392,28 @@
 
     window.buildMobileStack = function (sources) {
       if (window.innerWidth > 700 || !stackEl) return;
+      if (ready) return; // already built
+
+      // Fisher-Yates shuffle for random order
+      const shuffled = [...sources];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
 
       // Reorder: max 2 consecutive landscape images
       // We need to know each image's orientation first — preload metadata
       let loaded = 0;
-      const meta = sources.map(() => ({ landscape: false }));
+      const meta = shuffled.map(() => ({ landscape: false }));
 
-      sources.forEach((src, i) => {
+      shuffled.forEach((src, i) => {
         const t = new Image();
         t.onload = () => {
           meta[i].landscape = t.naturalWidth > t.naturalHeight;
           loaded++;
-          if (loaded === sources.length) buildWithMeta(sources, meta);
+          if (loaded === shuffled.length) buildWithMeta(shuffled, meta);
         };
-        t.onerror = () => { loaded++; if (loaded === sources.length) buildWithMeta(sources, meta); };
+        t.onerror = () => { loaded++; if (loaded === shuffled.length) buildWithMeta(shuffled, meta); };
         t.src = src;
       });
     };
@@ -461,14 +479,10 @@
         const h = portraitCard.offsetHeight;
         if (!h) { requestAnimationFrame(init); return; }
 
-        // Set landscape cards to same height as portrait for vertical centering
-        // but keep overflow visible and remove background bars
         cards.forEach(card => {
           if (card.dataset.landscape === '1') {
             card.style.height = h + 'px';
-            card.style.background = 'none';
             card.style.overflow = 'hidden';
-            // Center the image vertically
             const img = card.querySelector('img');
             if (img) {
               img.style.position = 'absolute';
@@ -512,13 +526,13 @@
     }
 
     function attachDrag() {
-      let active = false, startX = 0, startY = 0, moveX = 0;
+      let active = false, startX = 0, moveX = 0;
+      const history = []; // cards removed from top, for undo
 
       stackEl.addEventListener('touchstart', e => {
         if (!ready || cards.length < 2) return;
         active = true;
         startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
         moveX  = 0;
         cards[0].style.transition = 'none';
       }, { passive: true });
@@ -529,7 +543,6 @@
         const baseRot = parseFloat(cards[0].dataset.rot || 0);
         const rot = baseRot + moveX * 0.05;
         cards[0].style.transform = `translateX(${moveX}px) rotate(${rot}deg)`;
-        // No peek: cards behind stay in place
       }, { passive: true });
 
       stackEl.addEventListener('touchend', () => {
@@ -538,32 +551,60 @@
         const threshold = window.innerWidth * 0.28;
 
         if (Math.abs(moveX) > threshold) {
-          // Swipe off
-          const dir    = moveX > 0 ? 1 : -1;
-          const top    = cards[0];
-          const baseRot = parseFloat(top.dataset.rot || 0);
-          top.style.transition = 'transform 0.32s ease-out, opacity 0.28s ease';
-          top.style.transform  = `translateX(${dir * 115}vw) rotate(${baseRot + dir * 22}deg)`;
-          top.style.opacity    = '0';
+          const dir = moveX > 0 ? 1 : -1; // +1 = right, -1 = left
 
-          // Restack remaining cards immediately
-          cards.shift();
-          cards.push(top);
-          positionAll(true);
-
-          // Reset the swiped card silently at the bottom
-          setTimeout(() => {
-            top.style.transition = 'none';
+          if (dir === -1) {
+            // LEFT swipe — remove top card, send to bottom
+            const top = cards[0];
+            const baseRot = parseFloat(top.dataset.rot || 0);
+            top.style.transition = 'transform 0.32s ease-out, opacity 0.28s ease';
+            top.style.transform  = `translateX(-115vw) rotate(${baseRot - 22}deg)`;
             top.style.opacity    = '0';
-            const last = cards.length - 1;
-            top.style.transform  = `translateY(${(VISIBLE-1) * Y_STEP}px) scale(${1-(VISIBLE-1)*S_STEP})`;
-            top.style.zIndex     = cards.length - last;
-            // Fade it back into the bottom of the visible stack
+            cards.shift();
+            cards.push(top);
+            history.push(top);
+            positionAll(true);
+            setTimeout(() => {
+              top.style.transition = 'none';
+              top.style.opacity    = '0';
+              const last = cards.length - 1;
+              const rot  = parseFloat(top.dataset.rot || 0);
+              top.style.transform = `translateY(${(VISIBLE-1)*Y_STEP}px) scale(${1-(VISIBLE-1)*S_STEP}) rotate(${rot}deg)`;
+              top.style.zIndex    = cards.length - last;
+              requestAnimationFrame(() => {
+                top.style.transition = 'opacity 0.3s ease';
+                top.style.opacity    = cards.indexOf(top) < VISIBLE ? '1' : '0';
+              });
+            }, 340);
+
+          } else {
+            // RIGHT swipe — bring back last removed card to top
+            if (history.length === 0) {
+              // Nothing to bring back — snap
+              cards[0].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+              positionAll(true);
+              return;
+            }
+            const prev = history.pop();
+            // Remove from bottom of cards array
+            const idx = cards.indexOf(prev);
+            if (idx !== -1) cards.splice(idx, 1);
+            // Place at top
+            cards.unshift(prev);
+            // Animate in from right
+            prev.style.transition = 'none';
+            prev.style.opacity    = '1';
+            const prevRot = parseFloat(prev.dataset.rot || 0);
+            prev.style.transform  = `translateX(115vw) rotate(${prevRot + 22}deg)`;
+            prev.style.zIndex     = cards.length;
+            // Also snap current top card back
+            cards[1].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
             requestAnimationFrame(() => {
-              top.style.transition = 'opacity 0.3s ease';
-              top.style.opacity    = cards.indexOf(top) < VISIBLE ? '1' : '0';
+              prev.style.transition = 'transform 0.32s ease-out';
+              positionAll(false);
+              prev.style.transform = `translateY(0px) scale(1) rotate(${prevRot}deg)`;
             });
-          }, 340);
+          }
 
         } else {
           // Snap back
