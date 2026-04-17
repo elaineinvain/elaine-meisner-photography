@@ -384,10 +384,76 @@
     window.buildMobileStack = function (sources) {
       if (window.innerWidth > 700 || !stackEl) return;
 
-      // Create all cards, top card last (highest z-index)
+      // Reorder: max 2 consecutive landscape images
+      // We need to know each image's orientation first — preload metadata
+      let loaded = 0;
+      const meta = sources.map(() => ({ landscape: false }));
+
       sources.forEach((src, i) => {
+        const t = new Image();
+        t.onload = () => {
+          meta[i].landscape = t.naturalWidth > t.naturalHeight;
+          loaded++;
+          if (loaded === sources.length) buildWithMeta(sources, meta);
+        };
+        t.onerror = () => { loaded++; if (loaded === sources.length) buildWithMeta(sources, meta); };
+        t.src = src;
+      });
+    };
+
+    function buildWithMeta(sources, meta) {
+      // Reorder to ensure max 2 consecutive landscape
+      const reordered = [...sources.map((src, i) => ({ src, landscape: meta[i].landscape }))];
+      let consecutiveLandscape = 0;
+      for (let i = 0; i < reordered.length; i++) {
+        if (reordered[i].landscape) {
+          consecutiveLandscape++;
+          if (consecutiveLandscape > 2) {
+            // Find next portrait and swap
+            for (let j = i + 1; j < reordered.length; j++) {
+              if (!reordered[j].landscape) {
+                [reordered[i], reordered[j]] = [reordered[j], reordered[i]];
+                consecutiveLandscape = 0;
+                break;
+              }
+            }
+          }
+        } else {
+          consecutiveLandscape = 0;
+        }
+      }
+
+      // Random rotations — some straight (0), most slightly tilted
+      const rotations = reordered.map((_, i) => {
+        const r = sr(i * 13 + 7);
+        if (r < 0.25) return 0; // 25% chance of straight
+        const angle = (sr(i * 7 + 3) * 8 - 4); // -4 to +4 degrees
+        return parseFloat(angle.toFixed(1));
+      });
+
+      // Size scales — slight variation
+      const scales = reordered.map((_, i) => {
+        const s = [0.90, 0.93, 0.96, 1.0, 1.03, 1.06];
+        return s[Math.floor(sr(i * 5 + 2) * s.length)];
+      });
+
+      // Build cards
+      reordered.forEach(({ src, landscape }, i) => {
         const card = document.createElement('div');
         card.className = 'stack-card';
+        card.dataset.rot = rotations[i];
+        card.dataset.landscape = landscape ? '1' : '0';
+
+        const baseW = landscape ? 300 : 260;
+        card.style.width = Math.round(baseW * scales[i]) + 'px';
+
+        // Landscape cards: use flex to center vertically within portrait-like container
+        if (landscape) {
+          card.style.display = 'flex';
+          card.style.alignItems = 'center';
+          card.style.justifyContent = 'center';
+        }
+
         const img = document.createElement('img');
         img.src = src; img.draggable = false;
         card.appendChild(img);
@@ -395,12 +461,13 @@
         cards.push(card);
       });
 
-      // Wait for top card image to load, then lock height and show
+      // Wait for top card to render, lock height, show
       const topImg = cards[0].querySelector('img');
       function init() {
-        const h = cards[0].offsetHeight;
+        // Use a portrait card for height reference
+        const portraitCard = cards.find(c => c.dataset.landscape === '0') || cards[0];
+        const h = portraitCard.offsetHeight;
         if (!h) { requestAnimationFrame(init); return; }
-        // Lock container height — never changes again
         stackEl.style.height = (h + Y_STEP * VISIBLE) + 'px';
         positionAll(false);
         stackEl.style.transition = 'opacity 0.4s ease';
@@ -410,21 +477,24 @@
       }
       topImg.complete ? requestAnimationFrame(init)
                       : topImg.addEventListener('load', () => requestAnimationFrame(init));
-    };
+    }
 
     function positionAll(animate) {
       cards.forEach((card, i) => {
         const visible = i < VISIBLE;
-        if (animate) {
-          card.style.transition = 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)';
-        } else {
-          card.style.transition = 'none';
-        }
+        const rot = parseFloat(card.dataset.rot || 0);
+        card.style.transition = animate
+          ? 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)'
+          : 'none';
         card.style.zIndex    = cards.length - i;
         card.style.opacity   = visible ? '1' : '0';
-        card.style.transform = visible
-          ? `translateY(${i * Y_STEP}px) scale(${1 - i * S_STEP})`
-          : `translateY(${(VISIBLE - 1) * Y_STEP}px) scale(${1 - (VISIBLE - 1) * S_STEP})`;
+        if (visible) {
+          const scale = 1 - i * S_STEP;
+          const y     = i * Y_STEP;
+          card.style.transform = `translateY(${y}px) scale(${scale}) rotate(${rot}deg)`;
+        } else {
+          card.style.transform = `translateY(${(VISIBLE-1)*Y_STEP}px) scale(${1-(VISIBLE-1)*S_STEP}) rotate(${rot}deg)`;
+        }
       });
     }
 
@@ -443,16 +513,17 @@
       stackEl.addEventListener('touchmove', e => {
         if (!active) return;
         moveX = e.touches[0].clientX - startX;
-        const rot = moveX * 0.05;
-        // Move top card with finger
+        const baseRot = parseFloat(cards[0].dataset.rot || 0);
+        const rot = baseRot + moveX * 0.05;
         cards[0].style.transform = `translateX(${moveX}px) rotate(${rot}deg)`;
-        // Peek next card slightly as top moves
-        const prog = Math.min(Math.abs(moveX) / (window.innerWidth * 0.3), 1);
+        // Peek next card
         if (cards[1]) {
+          const prog = Math.min(Math.abs(moveX) / (window.innerWidth * 0.3), 1);
+          const nextRot = parseFloat(cards[1].dataset.rot || 0);
           cards[1].style.transition = 'none';
           const s = (1 - S_STEP) + S_STEP * prog;
           const y = Y_STEP - Y_STEP * prog;
-          cards[1].style.transform = `translateY(${y}px) scale(${s})`;
+          cards[1].style.transform = `translateY(${y}px) scale(${s}) rotate(${nextRot}deg)`;
         }
       }, { passive: true });
 
@@ -463,10 +534,11 @@
 
         if (Math.abs(moveX) > threshold) {
           // Swipe off
-          const dir = moveX > 0 ? 1 : -1;
-          const top = cards[0];
+          const dir    = moveX > 0 ? 1 : -1;
+          const top    = cards[0];
+          const baseRot = parseFloat(top.dataset.rot || 0);
           top.style.transition = 'transform 0.32s ease-out, opacity 0.28s ease';
-          top.style.transform  = `translateX(${dir * 115}vw) rotate(${dir * 22}deg)`;
+          top.style.transform  = `translateX(${dir * 115}vw) rotate(${baseRot + dir * 22}deg)`;
           top.style.opacity    = '0';
 
           // Restack remaining cards immediately
