@@ -299,22 +299,27 @@
       backdrop-filter: blur(6px);
       align-items: center;
       justify-content: center;
+      padding: 60px 40px;
       overflow-y: auto;
     }
     #datenschutz-overlay.open { display: flex; }
     #datenschutz-box {
-      max-width: 560px;
-      width: 90%;
+      max-width: 900px;
+      width: 100%;
       font-family: var(--font);
       font-size: 18px;
       letter-spacing: 0.03em;
       line-height: 1.9;
       color: var(--text);
-      padding: 20px 0;
     }
     #datenschutz-box h2 {
       font-size: 18px;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
+    }
+    #datenschutz-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
     }
     #datenschutz-box strong {
       font-weight: 700;
@@ -331,6 +336,10 @@
       border: none;
       cursor: pointer;
       opacity: 1;
+    }
+    @media (max-width: 700px) {
+      #datenschutz-columns { grid-template-columns: 1fr; gap: 0; }
+      #datenschutz-overlay { padding: 40px 20px; }
     }
     #impressum-overlay {
       display: none;
@@ -542,31 +551,44 @@
   <div id="datenschutz-overlay">
     <div id="datenschutz-box">
       <h2>Datenschutz</h2>
-      <p>
-        <strong>Verantwortliche Person</strong><br>
-        Elaine Meisner<br>
-        Saarlandstrasse 45, 44139 Dortmund<br>
-        elainemeisner&#64;online.de<br>
-        <br>
-        <strong>Hosting</strong><br>
-        Diese Website wird gehostet von Vercel Inc., 340 Pine Street, San Francisco, CA 94104, USA.
-        Beim Aufruf der Website werden durch den Hosting-Anbieter Server-Logs mit IP-Adressen
-        für bis zu 30 Tage gespeichert. Weitere Informationen: vercel.com/legal/privacy-policy<br>
-        <br>
-        <strong>Cookies und lokaler Speicher</strong><br>
-        Diese Website verwendet keine Cookies. Es wird ausschliesslich der sessionStorage des Browsers
-        für technisch notwendige Funktionen genutzt. Die Daten werden automatisch beim Schliessen
-        des Browser-Tabs gelöscht und nicht an Dritte übermittelt.<br>
-        <br>
-        <strong>Externe Links</strong><br>
-        Diese Website enthält einen Link zu Instagram (Meta Platforms Ireland Ltd.). Beim Anklicken
-        verlassen Sie diese Website. Für die Inhalte und Datenschutzpraktiken von Instagram ist
-        Meta verantwortlich.<br>
-        <br>
-        <strong>Ihre Rechte</strong><br>
-        Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung
-        Ihrer personenbezogenen Daten. Wenden Sie sich dazu an die oben genannte Adresse.
-      </p>
+      <div id="datenschutz-columns">
+        <div>
+          <p>
+            <strong>Verantwortliche Person</strong><br>
+            Elaine Meisner<br>
+            Saarlandstrasse 45, 44139 Dortmund<br>
+            elainemeisner&#64;online.de
+          </p>
+          <br>
+          <p>
+            <strong>Hosting</strong><br>
+            Diese Website wird gehostet von Vercel Inc., 340 Pine Street, San Francisco, CA 94104, USA.
+            Beim Aufruf der Website werden durch den Hosting-Anbieter Server-Logs mit IP-Adressen
+            für bis zu 30 Tage gespeichert. Weitere Informationen: vercel.com/legal/privacy-policy
+          </p>
+        </div>
+        <div>
+          <p>
+            <strong>Cookies und lokaler Speicher</strong><br>
+            Diese Website verwendet keine Cookies. Es wird ausschliesslich der sessionStorage des Browsers
+            für technisch notwendige Funktionen genutzt. Die Daten werden automatisch beim Schliessen
+            des Browser-Tabs gelöscht und nicht an Dritte übermittelt.
+          </p>
+          <br>
+          <p>
+            <strong>Externe Links</strong><br>
+            Diese Website enthält einen Link zu Instagram (Meta Platforms Ireland Ltd.). Beim Anklicken
+            verlassen Sie diese Website. Für die Inhalte und Datenschutzpraktiken von Instagram ist
+            Meta verantwortlich.
+          </p>
+          <br>
+          <p>
+            <strong>Ihre Rechte</strong><br>
+            Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung
+            Ihrer personenbezogenen Daten. Wenden Sie sich dazu an die oben genannte Adresse.
+          </p>
+        </div>
+      </div>
       <button id="datenschutz-close">close</button>
     </div>
   </div>
