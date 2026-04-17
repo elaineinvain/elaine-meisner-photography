@@ -417,23 +417,28 @@
     // so we don't wait for sequential loading
     if (window.innerWidth <= 700) {
       (function parallelPreload() {
-        let found = 0, checked = 0, total = 0;
         const parallel = [];
-        // Try up to 200 images in parallel
-        for (let j = 1; j <= 200; j++) {
+        let checked = 0;
+        const MAX = 300;
+
+        for (let j = 1; j <= MAX; j++) {
           (function(n) {
             const pt = new Image();
             pt.onload = () => {
               parallel.push({ n, src: `images/image${n}.jpg` });
-              found++;
               checked++;
-              // Build as soon as we have 12, then rebuild with all when done
-              if (found === 12 || checked === 200) {
+              if (checked === MAX) {
                 const srcs = parallel.sort((a,b) => a.n - b.n).map(x => x.src);
                 window.buildMobileStack(srcs);
               }
             };
-            pt.onerror = () => { checked++; };
+            pt.onerror = () => {
+              checked++;
+              if (checked === MAX) {
+                const srcs = parallel.sort((a,b) => a.n - b.n).map(x => x.src);
+                window.buildMobileStack(srcs);
+              }
+            };
             pt.src = `images/image${n}.jpg`;
           })(j);
         }
@@ -452,8 +457,7 @@
 
     window.buildMobileStack = function (sources) {
       if (window.innerWidth > 700 || !stackEl) return;
-      // If already built with same or more images, skip
-      if (ready && sources.length <= cards.length + (window._mobileHistory ? window._mobileHistory.length : 0)) return;
+      if (ready) return; // built once, never rebuild
 
       // Fisher-Yates shuffle for random order
       const shuffled = [...sources];
