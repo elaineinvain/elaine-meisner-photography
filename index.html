@@ -436,21 +436,28 @@
               if (n <= FIRST_BATCH) {
                 firstBatch.push({ n, src });
                 firstChecked++;
-                // Build stack as soon as first batch is ready
                 if (firstChecked === FIRST_BATCH && !stackBuilt) {
                   stackBuilt = true;
-                  const srcs = firstBatch.sort((a,b) => a.n - b.n).map(x => x.src);
+                  // Shuffle first batch randomly
+                  const srcs = firstBatch.map(x => x.src);
+                  for (let k = srcs.length - 1; k > 0; k--) {
+                    const m = Math.floor(Math.random() * (k + 1));
+                    [srcs[k], srcs[m]] = [srcs[m], srcs[k]];
+                  }
                   window.buildMobileStack(srcs);
                 }
               }
 
               allChecked++;
-              // Once everything is loaded, silently append new cards to bottom of stack
               if (allChecked === MAX) {
+                // Shuffle remaining before appending
                 const remaining = allImages
-                  .sort((a,b) => a.n - b.n)
                   .filter(x => x.n > FIRST_BATCH)
                   .map(x => x.src);
+                for (let k = remaining.length - 1; k > 0; k--) {
+                  const m = Math.floor(Math.random() * (k + 1));
+                  [remaining[k], remaining[m]] = [remaining[m], remaining[k]];
+                }
                 window.appendToStack && window.appendToStack(remaining);
               }
             };
@@ -460,14 +467,22 @@
                 firstChecked++;
                 if (firstChecked === FIRST_BATCH && !stackBuilt) {
                   stackBuilt = true;
-                  const srcs = firstBatch.sort((a,b) => a.n - b.n).map(x => x.src);
+                  const srcs = firstBatch.map(x => x.src);
+                  for (let k = srcs.length - 1; k > 0; k--) {
+                    const m = Math.floor(Math.random() * (k + 1));
+                    [srcs[k], srcs[m]] = [srcs[m], srcs[k]];
+                  }
                   window.buildMobileStack(srcs);
                 }
               }
               allChecked++;
               if (allChecked === MAX && !stackBuilt) {
                 stackBuilt = true;
-                const srcs = allImages.sort((a,b) => a.n - b.n).map(x => x.src);
+                const srcs = allImages.map(x => x.src);
+                for (let k = srcs.length - 1; k > 0; k--) {
+                  const m = Math.floor(Math.random() * (k + 1));
+                  [srcs[k], srcs[m]] = [srcs[m], srcs[k]];
+                }
                 window.buildMobileStack(srcs);
               }
             };
@@ -591,11 +606,9 @@
       }
 
       // Random rotations — some straight (0), most slightly tilted
-      const rotations = reordered.map((_, i) => {
-        const r = sr(i * 13 + 7);
-        if (r < 0.25) return 0; // 25% chance of straight
-        const angle = (sr(i * 7 + 3) * 8 - 4); // -4 to +4 degrees
-        return parseFloat(angle.toFixed(1));
+      const rotations = reordered.map(() => {
+        if (Math.random() < 0.25) return 0;
+        return parseFloat(((Math.random() * 8) - 4).toFixed(1));
       });
 
       // Size scales — slight variation
