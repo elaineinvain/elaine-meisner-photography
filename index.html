@@ -452,7 +452,8 @@
 
     window.buildMobileStack = function (sources) {
       if (window.innerWidth > 700 || !stackEl) return;
-      if (ready) return; // already built
+      // If already built with same or more images, skip
+      if (ready && sources.length <= cards.length + (window._mobileHistory ? window._mobileHistory.length : 0)) return;
 
       // Fisher-Yates shuffle for random order
       const shuffled = [...sources];
@@ -590,12 +591,14 @@
 
     function attachDrag() {
       let active = false, startX = 0, moveX = 0;
-      let undoMode = false;  // true when swiping right (undo)
-      let undoCard = null;   // the card being dragged back in
-      const history = [];    // stack of removed cards
+      let undoMode = false;
+      let undoCard = null;
+      const history = [];
+      window._mobileHistory = history; // expose for rebuild check
 
       stackEl.addEventListener('touchstart', e => {
-        if (!ready || cards.length < 2) return;
+        if (!ready) return;
+        if (cards.length === 0 && history.length === 0) return;
         active = true;
         startX = e.touches[0].clientX;
         moveX  = 0;
@@ -681,10 +684,19 @@
 
         } else if (!undoMode && Math.abs(moveX) > threshold && moveX < 0) {
           // LEFT swipe — remove top card (only if more than 1 card left)
-          if (cards.length <= 1) {
-            // At end of stack — snap back
+          if (cards.length <= 1 && history.length === 0) {
+            // Truly at end — snap back
+            const snapRot = parseFloat(cards[0].dataset.rot || 0);
+            const snapY   = parseFloat(cards[0].dataset.baseY || 0);
             cards[0].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
-            positionAll(false);
+            cards[0].style.transform  = `translateY(${snapY}px) rotate(${snapRot}deg)`;
+            return;
+          } else if (cards.length <= 1) {
+            // Last card — allow right-swipe (undo) but not left
+            const snapRot = parseFloat(cards[0].dataset.rot || 0);
+            const snapY   = parseFloat(cards[0].dataset.baseY || 0);
+            cards[0].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+            cards[0].style.transform  = `translateY(${snapY}px) rotate(${snapRot}deg)`;
             return;
           }
           const top = cards[0];
