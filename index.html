@@ -362,20 +362,11 @@
         // Collect for mobile stack
         mobileSources.push(src);
 
-        // On mobile: build stack immediately after first few images load
-        // for faster display — don't wait for all 94
-        if (window.innerWidth <= 700 && mobileSources.length === 8) {
-          // Pre-build with first 8, rest added lazily
-          window.buildMobileStack(mobileSources.slice());
-        }
-
         load(i);
       };
       t.onerror = () => {
-        // All images found — if not yet built on mobile, build now
-        if (window.innerWidth <= 700 && mobileSources.length < 8) {
-          window.buildMobileStack(mobileSources);
-        }
+        // All images collected — build mobile stack now
+        if (window.innerWidth <= 700) window.buildMobileStack(mobileSources);
       };
       t.src = src;
     })(0);
@@ -586,7 +577,7 @@
             const idx = cards.indexOf(undoCard);
             if (idx !== -1) cards.splice(idx, 1);
             cards.unshift(undoCard);
-            undoCard.style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+            undoCard.style.transition = 'transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94)';
             const undoRot = parseFloat(undoCard.dataset.rot || 0);
             undoCard.style.transform = `translateY(0px) scale(1) rotate(${undoRot}deg)`;
             undoCard.style.zIndex = cards.length;
@@ -607,27 +598,22 @@
           }
 
         } else if (!undoMode && Math.abs(moveX) > threshold && moveX < 0) {
-          // LEFT swipe — remove top card
+          // LEFT swipe — remove top card (only if more than 1 card left)
+          if (cards.length <= 1) {
+            // At end of stack — snap back
+            cards[0].style.transition = 'transform 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+            positionAll(true);
+            return;
+          }
           const top = cards[0];
           const baseRot = parseFloat(top.dataset.rot || 0);
           top.style.transition = 'transform 0.32s ease-out, opacity 0.28s ease';
           top.style.transform  = `translateX(-115vw) rotate(${baseRot - 22}deg)`;
           top.style.opacity    = '0';
           cards.shift();
-          cards.push(top);
+          // Do NOT push to bottom — card is gone from stack
           history.push(top);
           positionAll(true);
-          setTimeout(() => {
-            top.style.transition = 'none';
-            top.style.opacity    = '0';
-            const rot = parseFloat(top.dataset.rot || 0);
-            top.style.transform = `translateY(${(VISIBLE-1)*Y_STEP}px) scale(${1-(VISIBLE-1)*S_STEP}) rotate(${rot}deg)`;
-            top.style.zIndex    = cards.length - (cards.length - 1);
-            requestAnimationFrame(() => {
-              top.style.transition = 'opacity 0.3s ease';
-              top.style.opacity    = cards.indexOf(top) < VISIBLE ? '1' : '0';
-            });
-          }, 340);
 
         } else {
           // Snap back
