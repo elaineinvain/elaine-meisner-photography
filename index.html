@@ -292,16 +292,43 @@
         timer = setTimeout(tick, interval);
       }
 
+      const isMobile = window.innerWidth <= 700;
+
+      // Load all slides in parallel — start as soon as first one is ready
       function loadSlides(i) {
-        const t = new Image();
-        const isMobile = window.innerWidth <= 700;
-        t.onload  = () => {
-          // Skip slide2 on mobile
-          if (!(isMobile && i === 2)) slides.push('images/slide' + i + '.jpg');
-          loadSlides(i + 1);
-        };
-        t.onerror = () => { slides.length ? tick() : loader.remove(); };
-        t.src = 'images/slide' + i + '.jpg';
+        const MAX_SLIDES = 20;
+        let checked = 0;
+        const loaded = [];
+
+        for (let n = 1; n <= MAX_SLIDES; n++) {
+          (function(num) {
+            const t = new Image();
+            t.onload = () => {
+              if (!(isMobile && num === 2)) {
+                loaded.push({ num, src: 'images/slide' + num + '.jpg' });
+                // Start slideshow as soon as first slide is ready
+                if (loaded.length === 1) {
+                  slides = loaded.sort((a,b) => a.num - b.num).map(x => x.src);
+                  tick();
+                }
+              }
+              checked++;
+              if (checked === MAX_SLIDES) {
+                // All done — update slides array with full sorted list
+                slides = loaded.sort((a,b) => a.num - b.num).map(x => x.src);
+                if (slides.length === 0) loader.remove();
+              }
+            };
+            t.onerror = () => {
+              checked++;
+              if (checked === MAX_SLIDES) {
+                slides = loaded.sort((a,b) => a.num - b.num).map(x => x.src);
+                if (slides.length === 0) loader.remove();
+              }
+            };
+            t.src = 'images/slide' + num + '.jpg';
+          })(n);
+        }
       }
 
       setTimeout(() => {
@@ -318,7 +345,7 @@
         window.startPhotoAnimation();
       });
 
-      loadSlides(1);
+      loadSlides();
     })();
 
     /* ── Nav home — nur scrollen, nie neu laden ──────────────────────────── */
