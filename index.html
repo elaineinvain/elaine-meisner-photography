@@ -275,12 +275,14 @@
       if (sessionStorage.getItem('skipLoader')) {
         sessionStorage.removeItem('skipLoader');
         loader.remove();
-        // startPhotoAnimation noch nicht definiert — warten bis DOM fertig
         window.addEventListener('photosReady', function () {
           window.startPhotoAnimation();
         }, { once: true });
         return;
       }
+
+      // Fresh load — clear saved layout so photos get new random positions
+      sessionStorage.removeItem('photoLayout');
 
       let canClose = false, timer, slides = [], idx = 0, interval = 1000;
 
@@ -356,6 +358,15 @@
 
     const mobileSources = [];
 
+    // Load saved layout from sessionStorage if returning from about page
+    const savedLayout = (function() {
+      try { return JSON.parse(sessionStorage.getItem('photoLayout') || 'null'); } catch(e) { return null; }
+    })();
+    const layoutMap = {}; // src -> {left, top, w, h, zIndex}
+    if (savedLayout) {
+      savedLayout.forEach(p => { layoutMap[p.src] = p; });
+    }
+
     (function load(i) {
       i++;
       const src = `images/image${i}.jpg`;
@@ -366,26 +377,29 @@
         const scale = SCALES[Math.floor(sr(n * 7 + 4) * SCALES.length)];
         const aspect = t.naturalHeight / t.naturalWidth;
         const isLandscape = aspect < 1;
-
-        // Portrait: base 280px wide, Landscape: base 420px wide
         const baseW = isLandscape ? 420 : 280;
         const w     = Math.round(baseW * scale);
         const h     = Math.round(w * aspect);
         const vw    = window.innerWidth;
         const vh    = window.innerHeight;
 
+        // Use saved position if available, otherwise generate new random position
+        const saved = layoutMap[src];
+        const left  = saved ? saved.left : (Math.random() * (vw + w * 0.6) - w * 0.3);
+        const top   = saved ? saved.top  : (Math.random() * (vh + h * 0.4) - h * 0.2);
+        const zIdx  = saved ? saved.zIndex : n;
+
         const wrap = document.createElement('div');
         wrap.className       = 'photo-wrap';
-        wrap.style.zIndex    = n;
-        wrap.style.left      = (Math.random() * (vw + w * 0.6) - w * 0.3) + 'px';
-        wrap.style.top       = (Math.random() * (vh + h * 0.4) - h * 0.2) + 'px';
+        wrap.style.zIndex    = zIdx;
+        wrap.style.left      = left + 'px';
+        wrap.style.top       = top  + 'px';
         wrap.style.width     = w + 'px';
         wrap.style.height    = h + 'px';
-        // Keine Rotation
+        wrap.dataset.src     = src; // for saving later
 
         const inner = document.createElement('div');
         inner.className = 'photo-inner';
-        // Kein animationDelay hier — wird erst beim Start gesetzt
 
         const img = document.createElement('img');
         img.src = src; img.draggable = false;
@@ -396,7 +410,6 @@
         canvas.appendChild(wrap);
         pendingWraps.push(inner);
 
-        // Falls Loader schon weg: sofort animieren
         if (animationStarted) {
           inner.style.animationDelay = '0ms';
           requestAnimationFrame(() => {
@@ -404,15 +417,32 @@
           });
         }
 
-        // Collect for mobile stack
         mobileSources.push(src);
-
         load(i);
       };
       t.onerror = () => {
-        // All images collected — build mobile stack now
         if (window.innerWidth <= 700) window.buildMobileStack(mobileSources);
+        // Save current layout to sessionStorage once all photos are placed
+        saveLayout();
       };
+      t.src = src;
+    })(0);
+
+    function saveLayout() {
+      try {
+        const wraps = document.querySelectorAll('.photo-wrap');
+        const layout = Array.from(wraps).map(w => ({
+          src:    w.dataset.src,
+          left:   parseFloat(w.style.left),
+          top:    parseFloat(w.style.top),
+          zIndex: parseInt(w.style.zIndex)
+        }));
+        sessionStorage.setItem('photoLayout', JSON.stringify(layout));
+      } catch(e) {}
+    }
+
+    // Save layout periodically so moved photos are remembered too
+    setInterval(saveLayout, 3000);
       t.src = src;
     })(0);
 
@@ -851,7 +881,7 @@
         wrap.style.left = (sl + x - sx) + 'px';
         wrap.style.top  = (st + y - sy) + 'px';
       }
-      function up() { dragging = false; inner.classList.remove('lifted'); }
+      function up() { dragging = false; inner.classList.remove('lifted'); saveLayout(); }
 
       wrap.addEventListener('mousedown', e => { e.preventDefault(); dn(e.clientX, e.clientY); });
       window.addEventListener('mousemove', e => mv(e.clientX, e.clientY));
