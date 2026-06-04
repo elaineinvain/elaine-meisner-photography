@@ -81,7 +81,7 @@
       top: 0; left: 0; right: 0; bottom: 0;
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 0 0 40px;
+      padding: 0 0 8px;
       display: flex;
       flex-direction: column;
       gap: clamp(8px, 1.5vh, 20px);
@@ -271,14 +271,33 @@
     /* IMPRESSUM BUTTON */
     #footer-btns {
       display: flex;
-      gap: 24px;
-      margin-top: 20px;
-      margin-left: auto;
-      padding-right: 40px;
       justify-content: flex-end;
+      padding: 0 40px 16px 0;
+      margin-top: 20px;
     }
 
-    #impressum-btn,
+    #impressum-inline {
+      font-family: var(--font);
+      font-size: 20px;
+      letter-spacing: 0.03em;
+      color: var(--ink);
+      text-align: right;
+    }
+
+    .imp-heading {
+      margin-bottom: 10px;
+    }
+
+    .imp-address-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 24px;
+    }
+
+    .imp-address {
+      line-height: 1.2;
+    }
+
     #datenschutz-btn {
       font-family: var(--font);
       font-size: 20px;
@@ -287,8 +306,9 @@
       background: none;
       border: none;
       cursor: pointer;
-      opacity: 1;
       padding: 0;
+      white-space: nowrap;
+      line-height: 1.2;
     }
 
     #datenschutz-overlay {
@@ -526,8 +546,15 @@
   </div><!-- end content wrapper -->
 
   <div id="footer-btns">
-    <button id="impressum-btn">Impressum</button>
-    <button id="datenschutz-btn">Datenschutz</button>
+    <div id="impressum-inline">
+      <p class="imp-heading">Impressum</p>
+      <div class="imp-address-row">
+        <button id="datenschutz-btn">Datenschutz</button>
+        <div class="imp-address">
+          <p>Elaine Meisner<br>Saarlandstraße 45<br>44139 Dortmund, Germany</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   </div><!-- end scroll-content -->
@@ -640,16 +667,6 @@
 
       wrapper.replaceChild(col, mainRow);
     }());
-    var overlay  = document.getElementById('impressum-overlay');
-    var btn      = document.getElementById('impressum-btn');
-    var closeBtn = document.getElementById('impressum-close');
-
-    btn.addEventListener('click', function () { overlay.classList.add('open'); });
-    function closeOverlay() { overlay.classList.remove('open'); }
-    closeBtn.addEventListener('click', closeOverlay);
-    overlay.addEventListener('click', function (e) {
-      if (e.target === overlay) closeOverlay();
-    });
 
     // Datenschutz
     var dsOverlay = document.getElementById('datenschutz-overlay');
