@@ -5,6 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Elaine Meisner</title>
   <style>
+    /* ── COMING SOON — zum Deaktivieren: COMING_SOON = false setzen ── */
+    #coming-soon {
+      position: fixed;
+      inset: 0;
+      z-index: 9999999;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+      pointer-events: all;
+      overflow: hidden;
+    }
+
+    #coming-soon-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #coming-soon-text {
+      position: relative;
+      font-family: 'Special Gothic Condensed One', sans-serif;
+      font-size: clamp(32px, 6vw, 80px);
+      letter-spacing: 0.04em;
+      text-transform: lowercase;
+      color: #fff;
+      mix-blend-mode: difference;
+      user-select: none;
+    }
+  </style>
+  <style>
     @font-face {
       font-family: 'Special Gothic Condensed One';
       src: url('fonts/SpecialGothicCondensedOne-Regular.ttf') format('truetype');
@@ -237,6 +271,38 @@
   </style>
 </head>
 <body>
+
+  <!-- ══════════════════════════════════════════════════════
+       COMING SOON — auf true setzen zum Aktivieren
+                   — auf false setzen zum Deaktivieren
+       ══════════════════════════════════════════════════════ -->
+  <script>
+    var COMING_SOON = true;
+    if (COMING_SOON) {
+      document.write('<div id="coming-soon"><img id="coming-soon-img" src="" alt="" /><div id="coming-soon-text">coming soon...</div></div>');
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.style.overflow = 'hidden';
+
+        // Load slides and run slideshow — same as main loader
+        var slides = [], idx = 0, interval = 1000;
+
+        function tick() {
+          document.getElementById('coming-soon-img').src = slides[idx++ % slides.length];
+          interval = Math.max(333, interval * 0.91);
+          setTimeout(tick, interval);
+        }
+
+        function loadSlides(i) {
+          var t = new Image();
+          t.onload = function() { slides.push('images/slide' + i + '.jpg'); loadSlides(i + 1); };
+          t.onerror = function() { if (slides.length) tick(); };
+          t.src = 'images/slide' + i + '.jpg';
+        }
+
+        loadSlides(1);
+      });
+    }
+  </script>
 
   <div id="loader">
     <img id="loader-img" src="" alt="">
