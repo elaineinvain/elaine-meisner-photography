@@ -27,6 +27,20 @@
       object-fit: cover;
     }
 
+    #coming-soon-footer {
+      position: absolute;
+      bottom: 28px;
+      left: 0; right: 0;
+      text-align: center;
+      font-family: 'Special Gothic Condensed One', sans-serif;
+      font-size: 16px;
+      letter-spacing: 0.08em;
+      color: #fff;
+      mix-blend-mode: difference;
+      user-select: none;
+      cursor: pointer;
+    }
+
     #coming-soon-text {
       position: relative;
       font-family: 'Special Gothic Condensed One', sans-serif;
@@ -279,7 +293,7 @@
   <script>
     var COMING_SOON = true;
     if (COMING_SOON) {
-      document.write('<div id="coming-soon"><img id="coming-soon-img" src="" alt="" /><div id="coming-soon-text">coming soon...</div></div>');
+      document.write('<div id="coming-soon"><img id="coming-soon-img" src="" alt="" /><div id="coming-soon-text">coming soon...</div><div id="coming-soon-footer">Impressum</div></div><div id="cs-impressum-overlay" style="display:none;position:fixed;inset:0;z-index:99999999;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;"><div style="font-family:Special Gothic Condensed One,sans-serif;font-size:18px;letter-spacing:0.03em;line-height:1.6;color:#fff;text-align:center;">Impressum<br><br>Elaine Meisner<br>Saarlandstra\u00dfe 45<br>44139 Dortmund, Germany<br><br>elainemeisner&#64;online.de<br>+49 176 99113914<br><br><span id="cs-impressum-close" style="font-size:14px;opacity:0.6;cursor:pointer;letter-spacing:0.1em;">close</span></div></div>');
       document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = 'hidden';
 
@@ -300,6 +314,15 @@
         }
 
         loadSlides(1);
+
+        // Impressum link
+        document.getElementById('coming-soon-footer').addEventListener('click', function() {
+          var ov = document.getElementById('cs-impressum-overlay');
+          ov.style.display = 'flex';
+        });
+        document.getElementById('cs-impressum-close').addEventListener('click', function() {
+          document.getElementById('cs-impressum-overlay').style.display = 'none';
+        });
       });
     }
   </script>
